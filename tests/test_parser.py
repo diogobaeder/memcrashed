@@ -25,7 +25,7 @@ class ParserTest(TestCase):
         self.assertEqual(header.key_length, 0x0003)
         self.assertEqual(header.extra_length, 0x08)
         self.assertEqual(header.data_type, 0x00)
-        self.assertEqual(header.reserved, 0x0000)
+        self.assertEqual(header.vbucket_id, 0x0000)
         self.assertEqual(header.total_body_length, 0x0000000e)
         self.assertEqual(header.opaque, 0x00000000)
         self.assertEqual(header.cas, 0x0000000000000000)
