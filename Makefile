@@ -3,4 +3,4 @@ test:
 
 build: test
 	@echo Running syntax check...
-	@flake8 . --ignore=E501
+	-@flake8 . --ignore=E501
