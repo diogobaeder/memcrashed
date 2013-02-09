@@ -10,6 +10,5 @@ nose-notify==0.4.2
 tdaemon==0.1.1
 termcolor==1.0.1
 tornado==2.4.1
-wsgiref==0.1.2
 xtraceback==0.3.3
 yanc==0.2.3
