@@ -9,7 +9,7 @@ RequestHeader = namedtuple('RequestHeader', 'raw %s' % REQUEST_BLOCKS)
 header_struct = Struct(HEADER_FORMAT)
 
 
-def unpack_header(header_bytes):
+def unpack_request_header(header_bytes):
     tokens = header_struct.unpack(header_bytes)
     fields = (header_bytes, ) + tokens
     header = RequestHeader(*fields)

@@ -10,7 +10,7 @@ class ParserTest(TestCase):
     def unpacks_request_header_with_raw_field(self):
         request_bytes = b'\x80\x01\x00\x03\x08\x00\x00\x00\x00\x00\x00\x0e\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
 
-        request_header = parser.unpack_header(request_bytes)
+        request_header = parser.unpack_request_header(request_bytes)
 
         self.assertEqual(request_header.raw, request_bytes)
 
@@ -18,7 +18,7 @@ class ParserTest(TestCase):
     def unpacks_request_header_with_additional_fields(self):
         request_bytes = b'\x80\x01\x00\x03\x08\x00\x00\x00\x00\x00\x00\x0e\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
 
-        header = parser.unpack_header(request_bytes)
+        header = parser.unpack_request_header(request_bytes)
 
         self.assertEqual(header.magic, 0x80)
         self.assertEqual(header.opcode, 0x01)
