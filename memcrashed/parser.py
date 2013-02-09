@@ -1,8 +1,9 @@
 from collections import namedtuple
 from struct import Struct
 
-REQUEST_BLOCKS = 'magic opcode key_length extra_length data_type vbucket_id total_body_length opaque cas'
-RESPONSE_BLOCKS = 'magic opcode key_length extra_length data_type status total_body_length opaque cas'
+COMMON_BLOCKS = 'magic opcode key_length extra_length data_type %s total_body_length opaque cas'
+REQUEST_BLOCKS = COMMON_BLOCKS % 'vbucket_id'
+RESPONSE_BLOCKS = COMMON_BLOCKS % 'status'
 HEADER_FORMAT = '! B B H B B H I I Q'
 
 
