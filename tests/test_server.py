@@ -47,3 +47,7 @@ class ServerTest(AsyncTestCase):
         self.io_loop.add_callback(start_test)
 
         self.wait()
+
+    @istest
+    def can_be_started_with_a_specified_port(self):
+        pass
