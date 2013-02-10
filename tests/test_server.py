@@ -1,10 +1,24 @@
 import socket
 
+import memcache
 from nose.tools import istest
 from tornado import iostream
 from tornado.testing import AsyncTestCase
 
 from memcrashed.server import Server
+
+
+class SmokeTest(AsyncTestCase):
+    @istest
+    def checks_for_backend_memcached(self):
+        host = '127.0.0.1'
+        port = 11211
+
+        client = memcache.Client(['%s:%s' % (host, port)])
+        data = client.get_stats()
+
+        self.assertIsNotNone(data)
+        print('\n%s' % data)
 
 
 class ServerTest(AsyncTestCase):
