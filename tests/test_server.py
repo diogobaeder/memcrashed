@@ -18,7 +18,6 @@ class SmokeTest(AsyncTestCase):
         data = client.get_stats()
 
         self.assertIsNotNone(data)
-        print('\n%s' % data)
 
 
 class ServerTest(AsyncTestCase):
@@ -47,20 +46,27 @@ class ServerTest(AsyncTestCase):
         stream = iostream.IOStream(s, io_loop=self.io_loop)
 
         def start_test():
+            print('test started')
             stream.connect((host, port), send_request)
 
         def send_request():
+            print('sending request...')
             stream.write(request_bytes)
+            print('wrote request to stream')
             stream.read_bytes(len(response_bytes), receive_response)
+            print('read bytes')
 
         def receive_response(data):
+            print('receiving response...')
             self.assertEqual(data, response_bytes)
             stream.close()
+            print('closed the stream')
             self.stop()
+            print('stopped the io_loop')
 
         self.io_loop.add_callback(start_test)
 
-        self.wait()
+        self.wait(timeout=30)
 
     @istest
     def can_be_started_with_a_specified_port(self):

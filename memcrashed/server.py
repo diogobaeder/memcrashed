@@ -23,7 +23,7 @@ class Server(TCPServer):
 
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         backend = iostream.IOStream(s, io_loop=self.io_loop)
-        yield gen.Task(backend.connect, ("localhost", 11211))
+        yield gen.Task(backend.connect, ("127.0.0.1", 11211))
 
         yield gen.Task(backend.write, all_bytes)
 

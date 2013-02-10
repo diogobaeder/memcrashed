@@ -6,7 +6,7 @@ EXTENDED_REQUIREMENTS=requirements-py$(PYTHON_MAJOR_VERSION).txt
 
 
 test:
-	@env PYTHONHASHSEED=random PYTHONPATH=. nosetests --nocapture --with-coverage --cover-package=memcrashed --cover-erase --with-yanc --with-xtraceback tests/
+	@env PYTHONHASHSEED=random PYTHONPATH=. nosetests --with-coverage --cover-package=memcrashed --cover-erase --with-yanc --with-xtraceback tests/
 
 build: test
 	@echo Running syntax check...
