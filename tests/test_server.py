@@ -30,7 +30,7 @@ class ServerTest(AsyncTestCase):
         The operation being done is setting "foo" key as "bar" value.
         '''
         host = '127.0.0.1'
-        port = 8888
+        port = 22322
 
         request_header_bytes = b'\x80\x0c\x00\x03\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
         request_body_bytes = b'foo'
