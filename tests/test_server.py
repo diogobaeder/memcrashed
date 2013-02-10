@@ -49,10 +49,13 @@ class ServerTest(AsyncTestCase):
             print('test started')
             stream.connect((host, port), send_request)
 
+        def write_finished(*args, **kwargs):
+            print('finished writing bytes to stream')
+
         def send_request():
             print('sending request...')
-            stream.write(request_bytes)
-            print('wrote request to stream')
+            stream.write(request_bytes, write_finished)
+            print('probably wrote request to stream')
             stream.read_bytes(len(response_bytes), receive_response)
             print('read bytes')
 
