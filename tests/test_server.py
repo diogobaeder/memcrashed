@@ -21,6 +21,13 @@ class SmokeTest(AsyncTestCase):
 
 
 class ServerTest(AsyncTestCase):
+    def setUp(self):
+        super(ServerTest, self).setUp()
+        host = '127.0.0.1'
+        port = 11211
+        client = memcache.Client(['%s:%s' % (host, port)])
+        client.flush_all()
+
     @istest
     def reads_back_a_written_value(self):
         '''
@@ -35,8 +42,8 @@ class ServerTest(AsyncTestCase):
         request_body_bytes = b'foo'
         request_bytes = request_header_bytes + request_body_bytes
 
-        response_header_bytes = b'\x81\x0c\x00\x03\x04\x00\x00\x00\x00\x00\x00\n\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x01'
-        response_body_bytes = b'\x00\x00\x00\x00foobar'
+        response_header_bytes = b'\x81\x0c\x00\x03\x00\x00\x00\x01\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+        response_body_bytes = b'foo'
         response_bytes = response_header_bytes + response_body_bytes
 
         server = Server(io_loop=self.io_loop)
@@ -46,30 +53,22 @@ class ServerTest(AsyncTestCase):
         stream = iostream.IOStream(s, io_loop=self.io_loop)
 
         def start_test():
-            print('test started')
             stream.connect((host, port), send_request)
 
-        def write_finished(*args, **kwargs):
-            print('finished writing bytes to stream')
-
         def send_request():
-            print('sending request...')
             stream.write(request_bytes, write_finished)
-            print('probably wrote request to stream')
+
+        def write_finished(*args, **kwargs):
             stream.read_bytes(len(response_bytes), receive_response)
-            print('read bytes')
 
         def receive_response(data):
-            print('receiving response...')
             self.assertEqual(data, response_bytes)
             stream.close()
-            print('closed the stream')
             self.stop()
-            print('stopped the io_loop')
 
         self.io_loop.add_callback(start_test)
 
-        self.wait(timeout=30)
+        self.wait()
 
     @istest
     def can_be_started_with_a_specified_port(self):
