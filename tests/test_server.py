@@ -31,9 +31,7 @@ class ServerTest(AsyncTestCase):
     @istest
     def reads_back_a_written_value(self):
         '''
-        This test uses low-level sockets to check if the Server is respecting the protocol when setting a value to memcached.
-
-        The operation being done is setting "foo" key as "bar" value.
+        This test uses low-level sockets to check if the Server is respecting the protocol when getting a value from memcached.
         '''
         host = '127.0.0.1'
         port = 22322
