@@ -1,11 +1,12 @@
 import socket
 
 import memcache
+from mock import patch, MagicMock
 from nose.tools import istest
 from tornado import iostream
 from tornado.testing import AsyncTestCase
 
-from memcrashed.server import Server
+from memcrashed.server import Server, BinaryProtocolHandler
 
 
 class SmokeTest(AsyncTestCase):
@@ -69,5 +70,21 @@ class ServerTest(AsyncTestCase):
         self.wait()
 
     @istest
-    def can_be_started_with_a_specified_port(self):
-        pass
+    def starts_with_binary_protocol_handler_by_default(self):
+        server = Server(io_loop=self.io_loop)
+        self.assertIsInstance(server.handler, BinaryProtocolHandler)
+
+    @istest
+    def passes_io_loop_to_protocol(self):
+        server = Server(io_loop=self.io_loop)
+        self.assertIs(server.io_loop, server.handler.io_loop)
+
+    @istest
+    def passes_request_to_handler(self):
+        server = Server(io_loop=self.io_loop)
+        handler = MagicMock(spec=BinaryProtocolHandler)
+
+        with patch.object(server, 'handler', handler):
+            server.handle_stream('some stream', 'some address')
+
+            handler.process.assert_called_with('some stream')

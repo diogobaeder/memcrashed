@@ -9,13 +9,24 @@ from tornado.netutil import TCPServer
 from memcrashed import parser
 
 
-HEADER_BYTES = 24
-
-
 class Server(TCPServer):
-    @gen.engine
+    def __init__(self, io_loop=None, ssl_options=None):
+        super(Server, self).__init__(io_loop, ssl_options)
+        self.handler = BinaryProtocolHandler(self.io_loop)
+
     def handle_stream(self, stream, address):
-        header_bytes = yield gen.Task(stream.read_bytes, HEADER_BYTES)
+        self.handler.process(stream)
+
+
+class BinaryProtocolHandler(object):
+    HEADER_BYTES = 24
+
+    def __init__(self, io_loop):
+        self.io_loop = io_loop
+
+    @gen.engine
+    def process(self, stream):
+        header_bytes = yield gen.Task(stream.read_bytes, self.HEADER_BYTES)
 
         headers = parser.unpack_request_header(header_bytes)
         body_bytes = yield gen.Task(stream.read_bytes, headers.total_body_length)
@@ -28,7 +39,7 @@ class Server(TCPServer):
 
         yield gen.Task(backend.write, all_bytes)
 
-        header_bytes = yield gen.Task(backend.read_bytes, HEADER_BYTES)
+        header_bytes = yield gen.Task(backend.read_bytes, self.HEADER_BYTES)
 
         headers = parser.unpack_response_header(header_bytes)
         body_bytes = yield gen.Task(backend.read_bytes, headers.total_body_length)
