@@ -87,9 +87,10 @@ class ServerTest(ServerTestCase):
         handler = MagicMock(spec=BinaryProtocolHandler)
 
         with patch.object(server, 'handler', handler):
+            server.backend = 'some backend'
             server.handle_stream('some stream', 'some address')
 
-            handler.process.assert_called_with('some stream')
+            handler.process.assert_called_with('some stream', 'some backend')
 
     @istest
     def sets_a_text_handler(self):

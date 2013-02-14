@@ -13,12 +13,24 @@ class Server(TCPServer):
     def __init__(self, io_loop=None, ssl_options=None):
         super(Server, self).__init__(io_loop, ssl_options)
         self.handler = BinaryProtocolHandler(self.io_loop)
+        self.backend = None
 
     def handle_stream(self, stream, address):
-        self.handler.process(stream)
+        self.ensure_backend()
+        self.handler.process(stream, self.backend)
 
     def set_handler(self, handler_type):
         self.handler = TextProtocolHandler(self.io_loop)
+
+    def create_backend(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        backend = iostream.IOStream(s, io_loop=self.io_loop)
+        backend.connect(("127.0.0.1", 11211))
+        return backend
+
+    def ensure_backend(self):
+        if self.backend is None:
+            self.backend = self.create_backend()
 
 
 class BinaryProtocolHandler(object):
@@ -28,17 +40,13 @@ class BinaryProtocolHandler(object):
         self.io_loop = io_loop
 
     @gen.engine
-    def process(self, stream):
+    def process(self, stream, backend):
         header_bytes = yield gen.Task(stream.read_bytes, self.HEADER_BYTES)
 
         headers = parser.unpack_request_header(header_bytes)
         body_bytes = yield gen.Task(stream.read_bytes, headers.total_body_length)
 
         all_bytes = header_bytes + body_bytes
-
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        backend = iostream.IOStream(s, io_loop=self.io_loop)
-        yield gen.Task(backend.connect, ("127.0.0.1", 11211))
 
         yield gen.Task(backend.write, all_bytes)
 
@@ -59,21 +67,14 @@ class TextProtocolHandler(object):
         self.io_loop = io_loop
 
     @gen.engine
-    def process(self, stream):
+    def process(self, stream, backend):
         header_bytes = yield gen.Task(stream.read_until, self.END)
 
         body_bytes = yield gen.Task(stream.read_until, self.END)
 
         all_bytes = header_bytes + body_bytes
 
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        backend = iostream.IOStream(s, io_loop=self.io_loop)
-        yield gen.Task(backend.connect, ("127.0.0.1", 11211))
-
         yield gen.Task(backend.write, all_bytes)
-
-        print 'writing:', backend.writing()
-        print 'reading:', backend.reading()
 
         header_bytes = yield gen.Task(backend.read_until, self.END)
 
