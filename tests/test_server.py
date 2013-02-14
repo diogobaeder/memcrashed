@@ -6,7 +6,16 @@ from nose.tools import istest
 from tornado import iostream
 from tornado.testing import AsyncTestCase
 
-from memcrashed.server import Server, BinaryProtocolHandler
+from memcrashed.server import Server, BinaryProtocolHandler, TextProtocolHandler
+
+
+class ServerTestCase(AsyncTestCase):
+    def setUp(self):
+        super(ServerTestCase, self).setUp()
+        host = '127.0.0.1'
+        port = 11211
+        client = memcache.Client(['%s:%s' % (host, port)])
+        client.flush_all()
 
 
 class SmokeTest(AsyncTestCase):
@@ -21,14 +30,7 @@ class SmokeTest(AsyncTestCase):
         self.assertIsNotNone(data)
 
 
-class ServerTest(AsyncTestCase):
-    def setUp(self):
-        super(ServerTest, self).setUp()
-        host = '127.0.0.1'
-        port = 11211
-        client = memcache.Client(['%s:%s' % (host, port)])
-        client.flush_all()
-
+class ServerTest(ServerTestCase):
     @istest
     def reads_back_a_written_value(self):
         '''
@@ -88,3 +90,58 @@ class ServerTest(AsyncTestCase):
             server.handle_stream('some stream', 'some address')
 
             handler.process.assert_called_with('some stream')
+
+    @istest
+    def sets_a_text_handler(self):
+        server = Server(io_loop=self.io_loop)
+        server.set_handler('text')
+        self.assertIsInstance(server.handler, TextProtocolHandler)
+
+    @istest
+    def passes_io_loop_to_new_handler(self):
+        server = Server(io_loop=self.io_loop)
+        server.set_handler('text')
+        self.assertIs(server.io_loop, server.handler.io_loop)
+
+
+class TextProtocolHandlerTest(ServerTestCase):
+    def command_for_lines(self, lines):
+        return ''.join(line + '\r\n' for line in lines)
+
+    @istest
+    def reads_back_a_written_value(self):
+        host = '127.0.0.1'
+        port = 22322
+
+        request_bytes = self.command_for_lines([
+            'set foo 0 0 3',
+            'bar',
+        ])
+        response_bytes = self.command_for_lines([
+            'STORED',
+        ])
+
+        server = Server(io_loop=self.io_loop)
+        server.set_handler('text')
+        server.listen(port, address=host)
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        stream = iostream.IOStream(s, io_loop=self.io_loop)
+
+        def start_test():
+            stream.connect((host, port), send_request)
+
+        def send_request():
+            stream.write(request_bytes, write_finished)
+
+        def write_finished(*args, **kwargs):
+            stream.read_bytes(len(response_bytes), receive_response)
+
+        def receive_response(data):
+            self.assertEqual(data, response_bytes)
+            stream.close()
+            self.stop()
+
+        self.io_loop.add_callback(start_test)
+
+        self.wait()
