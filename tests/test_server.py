@@ -99,6 +99,12 @@ class ServerTest(ServerTestCase):
         self.assertIsInstance(server.handler, TextProtocolHandler)
 
     @istest
+    def sets_a_binary_handler(self):
+        server = Server(io_loop=self.io_loop)
+        server.set_handler('binary')
+        self.assertIsInstance(server.handler, BinaryProtocolHandler)
+
+    @istest
     def passes_io_loop_to_new_handler(self):
         server = Server(io_loop=self.io_loop)
         server.set_handler('text')

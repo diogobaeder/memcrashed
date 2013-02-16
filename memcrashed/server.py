@@ -20,7 +20,10 @@ class Server(TCPServer):
         self.handler.process(stream, self.backend)
 
     def set_handler(self, handler_type):
-        self.handler = TextProtocolHandler(self.io_loop)
+        if handler_type == 'text':
+            self.handler = TextProtocolHandler(self.io_loop)
+        else:
+            self.handler = BinaryProtocolHandler(self.io_loop)
 
     def create_backend(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
