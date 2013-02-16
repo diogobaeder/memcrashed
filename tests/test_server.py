@@ -107,7 +107,7 @@ class ServerTest(ServerTestCase):
 
 class TextProtocolHandlerTest(ServerTestCase):
     def command_for_lines(self, lines):
-        return ''.join(line + '\r\n' for line in lines)
+        return b''.join(line + b'\r\n' for line in lines)
 
     @istest
     def reads_back_a_written_value(self):
@@ -115,11 +115,11 @@ class TextProtocolHandlerTest(ServerTestCase):
         port = 22322
 
         request_bytes = self.command_for_lines([
-            'set foo 0 0 3',
-            'bar',
+            b'set foo 0 0 3',
+            b'bar',
         ])
         response_bytes = self.command_for_lines([
-            'STORED',
+            b'STORED',
         ])
 
         server = Server(io_loop=self.io_loop)

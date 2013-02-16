@@ -61,7 +61,7 @@ class BinaryProtocolHandler(object):
 
 
 class TextProtocolHandler(object):
-    END = '\r\n'
+    END = b'\r\n'
 
     def __init__(self, io_loop):
         self.io_loop = io_loop
