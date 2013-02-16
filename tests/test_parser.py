@@ -3,6 +3,7 @@ from unittest import TestCase
 from nose.tools import istest
 
 from memcrashed import parser
+from memcrashed.parser import TextParser
 
 
 class ParserTest(TestCase):
@@ -53,3 +54,35 @@ class ParserTest(TestCase):
         self.assertEqual(header.total_body_length, 0x0000000e)
         self.assertEqual(header.opaque, 0x00000000)
         self.assertEqual(header.cas, 0x0000000000000000)
+
+
+class TextParserTest(TestCase):
+    @istest
+    def unpacks_set_header_with_reply(self):
+        parser = TextParser()
+        request_bytes = 'set foo 0 1 2\r\n'
+
+        header = parser.unpack_request_header(request_bytes)
+
+        self.assertEqual(header.raw, request_bytes)
+        self.assertEqual(header.command, 'set')
+        self.assertEqual(header.key, 'foo')
+        self.assertEqual(header.flags, 0)
+        self.assertEqual(header.exptime, 1)
+        self.assertEqual(header.bytes, 2)
+        self.assertEqual(header.noreply, False)
+
+    @istest
+    def unpacks_set_header_without_reply(self):
+        parser = TextParser()
+        request_bytes = 'set foo 0 1 2 noreply\r\n'
+
+        header = parser.unpack_request_header(request_bytes)
+
+        self.assertEqual(header.raw, request_bytes)
+        self.assertEqual(header.command, 'set')
+        self.assertEqual(header.key, 'foo')
+        self.assertEqual(header.flags, 0)
+        self.assertEqual(header.exptime, 1)
+        self.assertEqual(header.bytes, 2)
+        self.assertEqual(header.noreply, True)

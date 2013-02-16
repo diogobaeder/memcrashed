@@ -26,3 +26,27 @@ def extract_fields_for_header(header_bytes):
     tokens = header_struct.unpack(header_bytes)
     fields = (header_bytes, ) + tokens
     return fields
+
+
+class TextParser(object):
+    STORAGE_FIELDS = 'command key flags exptime bytes noreply'
+    StorageRequestHeader = namedtuple('RequestHeader', 'raw %s' % STORAGE_FIELDS)
+
+    def unpack_request_header(self, header_bytes):
+        fields = self._fields_from_header(header_bytes)
+        request_header = self.StorageRequestHeader(*fields)
+        return request_header
+
+    def _fields_from_header(self, header_bytes):
+        statement = header_bytes.strip()
+        header_fields = statement.split(' ')
+        for i in (2, 3, 4):
+            header_fields[i] = int(header_fields[i])
+        fields = [header_bytes]
+        fields.extend(header_fields)
+        if header_fields[-1] == 'noreply':
+            fields.pop()
+            fields.append(True)
+        else:
+            fields.append(False)
+        return fields
