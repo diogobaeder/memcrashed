@@ -206,3 +206,27 @@ class TextParserTest(TestCase):
         self.assertEqual(header.key, b'foo')
         self.assertEqual(header.value, 123)
         self.assertTrue(header.noreply)
+
+    @istest
+    def unpacks_touch_header_with_reply(self):
+        parser = TextParser()
+        request_bytes = b'touch foo\r\n'
+
+        header = parser.unpack_request_header(request_bytes)
+
+        self.assertEqual(header.raw, request_bytes)
+        self.assertEqual(header.command, b'touch')
+        self.assertEqual(header.key, b'foo')
+        self.assertFalse(header.noreply)
+
+    @istest
+    def unpacks_touch_header_without_reply(self):
+        parser = TextParser()
+        request_bytes = b'touch foo noreply\r\n'
+
+        header = parser.unpack_request_header(request_bytes)
+
+        self.assertEqual(header.raw, request_bytes)
+        self.assertEqual(header.command, b'touch')
+        self.assertEqual(header.key, b'foo')
+        self.assertTrue(header.noreply)

@@ -30,12 +30,12 @@ def extract_fields_for_header(header_bytes):
 
 class TextParser(object):
     STORAGE_FIELDS = 'command key bytes noreply'
-    DELETE_FIELDS = 'command key noreply'
+    DELETE_TOUCH_FIELDS = 'command key noreply'
     INCRDECR_FIELDS = 'command key value noreply'
     RETRIEVAL_FIELDS = 'command key'
 
     StorageRequestHeader = namedtuple('RequestHeader', 'raw %s' % STORAGE_FIELDS)
-    DeleteRequestHeader = namedtuple('GenericRequestHeader', 'raw %s' % DELETE_FIELDS)
+    DeleteTouchRequestHeader = namedtuple('DeleteTouchRequestHeader', 'raw %s' % DELETE_TOUCH_FIELDS)
     IncreaseDecreaseRequestHeader = namedtuple('IncreaseDecreaseRequestHeader', 'raw %s' % INCRDECR_FIELDS)
     RetrievalRequestHeader = namedtuple('RetrievalRequestHeader', 'raw %s' % RETRIEVAL_FIELDS)
 
@@ -46,8 +46,8 @@ class TextParser(object):
             request_header = self.StorageRequestHeader(*fields)
         elif self._is_incrdecr_command(command):
             request_header = self.IncreaseDecreaseRequestHeader(*fields)
-        elif self._is_delete_command(command):
-            request_header = self.DeleteRequestHeader(*fields)
+        elif self._is_delete_touch_command(command):
+            request_header = self.DeleteTouchRequestHeader(*fields)
         else:
             request_header = self.RetrievalRequestHeader(*fields)
         return request_header
@@ -79,8 +79,8 @@ class TextParser(object):
     def _is_retrieval_command(self, command):
         return command in (b'get', b'gets')
 
-    def _is_delete_command(self, command):
-        return command in (b'delete', )
+    def _is_delete_touch_command(self, command):
+        return command in (b'delete', b'touch')
 
     def _is_incrdecr_command(self, command):
         return command in (b'incr', b'decr')
