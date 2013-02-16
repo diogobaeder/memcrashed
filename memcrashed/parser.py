@@ -30,12 +30,12 @@ def extract_fields_for_header(header_bytes):
 
 class TextParser(object):
     STORAGE_FIELDS = 'command key bytes noreply'
-    GENERIC_FIELDS = 'command key noreply'
+    DELETE_FIELDS = 'command key noreply'
     INCRDECR_FIELDS = 'command key value noreply'
     RETRIEVAL_FIELDS = 'command key'
 
     StorageRequestHeader = namedtuple('RequestHeader', 'raw %s' % STORAGE_FIELDS)
-    GenericRequestHeader = namedtuple('GenericRequestHeader', 'raw %s' % GENERIC_FIELDS)
+    DeleteRequestHeader = namedtuple('GenericRequestHeader', 'raw %s' % DELETE_FIELDS)
     IncreaseDecreaseRequestHeader = namedtuple('IncreaseDecreaseRequestHeader', 'raw %s' % INCRDECR_FIELDS)
     RetrievalRequestHeader = namedtuple('RetrievalRequestHeader', 'raw %s' % RETRIEVAL_FIELDS)
 
@@ -46,8 +46,8 @@ class TextParser(object):
             request_header = self.StorageRequestHeader(*fields)
         elif self._is_incrdecr_command(command):
             request_header = self.IncreaseDecreaseRequestHeader(*fields)
-        elif not self._is_retrieval_command(command):
-            request_header = self.GenericRequestHeader(*fields)
+        elif self._is_delete_command(command):
+            request_header = self.DeleteRequestHeader(*fields)
         else:
             request_header = self.RetrievalRequestHeader(*fields)
         return request_header
@@ -78,6 +78,9 @@ class TextParser(object):
 
     def _is_retrieval_command(self, command):
         return command in (b'get', )
+
+    def _is_delete_command(self, command):
+        return command in (b'delete', )
 
     def _is_incrdecr_command(self, command):
         return command in (b'incr', b'decr')
