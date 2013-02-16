@@ -29,7 +29,7 @@ def extract_fields_for_header(header_bytes):
 
 
 class TextParser(object):
-    STORAGE_FIELDS = 'command key flags exptime bytes noreply'
+    STORAGE_FIELDS = 'command key bytes noreply'
     StorageRequestHeader = namedtuple('RequestHeader', 'raw %s' % STORAGE_FIELDS)
 
     def unpack_request_header(self, header_bytes):
@@ -40,13 +40,14 @@ class TextParser(object):
     def _fields_from_header(self, header_bytes):
         statement = header_bytes.strip()
         header_fields = statement.split(b' ')
-        for i in (2, 3, 4):
-            header_fields[i] = int(header_fields[i])
-        fields = [header_bytes]
-        fields.extend(header_fields)
-        if header_fields[-1] == b'noreply':
-            fields.pop()
-            fields.append(True)
-        else:
-            fields.append(False)
-        return fields
+        command = header_fields[0]
+        key = header_fields[1]
+        bytes_ = int(header_fields[4])
+        noreply = statement.endswith(b'noreply')
+        return [
+            header_bytes,
+            command,
+            key,
+            bytes_,
+            noreply,
+        ]

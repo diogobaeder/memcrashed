@@ -67,8 +67,6 @@ class TextParserTest(TestCase):
         self.assertEqual(header.raw, request_bytes)
         self.assertEqual(header.command, b'set')
         self.assertEqual(header.key, b'foo')
-        self.assertEqual(header.flags, 0)
-        self.assertEqual(header.exptime, 1)
         self.assertEqual(header.bytes, 2)
         self.assertEqual(header.noreply, False)
 
@@ -82,7 +80,5 @@ class TextParserTest(TestCase):
         self.assertEqual(header.raw, request_bytes)
         self.assertEqual(header.command, b'set')
         self.assertEqual(header.key, b'foo')
-        self.assertEqual(header.flags, 0)
-        self.assertEqual(header.exptime, 1)
         self.assertEqual(header.bytes, 2)
         self.assertEqual(header.noreply, True)
