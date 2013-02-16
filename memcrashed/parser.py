@@ -31,12 +31,12 @@ def extract_fields_for_header(header_bytes):
 class TextParser(object):
     STORAGE_FIELDS = 'command key bytes noreply'
     DELETE_TOUCH_FIELDS = 'command key noreply'
-    INCRDECR_FIELDS = 'command key value noreply'
+    INCREASE_DECREASE_FIELDS = 'command key value noreply'
     RETRIEVAL_FIELDS = 'command key'
 
     StorageRequestHeader = namedtuple('RequestHeader', 'raw %s' % STORAGE_FIELDS)
     DeleteTouchRequestHeader = namedtuple('DeleteTouchRequestHeader', 'raw %s' % DELETE_TOUCH_FIELDS)
-    IncreaseDecreaseRequestHeader = namedtuple('IncreaseDecreaseRequestHeader', 'raw %s' % INCRDECR_FIELDS)
+    IncreaseDecreaseRequestHeader = namedtuple('IncreaseDecreaseRequestHeader', 'raw %s' % INCREASE_DECREASE_FIELDS)
     RetrievalRequestHeader = namedtuple('RetrievalRequestHeader', 'raw %s' % RETRIEVAL_FIELDS)
 
     def unpack_request_header(self, header_bytes):
@@ -44,7 +44,7 @@ class TextParser(object):
         command = fields[1]
         if self._is_storage_command(command):
             request_header = self.StorageRequestHeader(*fields)
-        elif self._is_incrdecr_command(command):
+        elif self._is_increase_decrease_command(command):
             request_header = self.IncreaseDecreaseRequestHeader(*fields)
         elif self._is_delete_touch_command(command):
             request_header = self.DeleteTouchRequestHeader(*fields)
@@ -65,7 +65,7 @@ class TextParser(object):
         if self._is_storage_command(command):
             bytes_ = int(header_fields[4])
             fields.append(bytes_)
-        if self._is_incrdecr_command(command):
+        if self._is_increase_decrease_command(command):
             value = int(header_fields[2])
             fields.append(value)
         if not self._is_retrieval_command(command):
@@ -82,5 +82,5 @@ class TextParser(object):
     def _is_delete_touch_command(self, command):
         return command in (b'delete', b'touch')
 
-    def _is_incrdecr_command(self, command):
+    def _is_increase_decrease_command(self, command):
         return command in (b'incr', b'decr')
