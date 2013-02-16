@@ -121,7 +121,18 @@ class TextParserTest(TestCase):
 
         self.assertEqual(header.raw, request_bytes)
         self.assertEqual(header.command, b'get')
-        self.assertEqual(header.key, b'foo')
+        self.assertEqual(header.keys, [b'foo'])
+
+    @istest
+    def unpacks_get_header_with_multiple_items(self):
+        parser = TextParser()
+        request_bytes = b'get foo bar\r\n'
+
+        header = parser.unpack_request_header(request_bytes)
+
+        self.assertEqual(header.raw, request_bytes)
+        self.assertEqual(header.command, b'get')
+        self.assertEqual(header.keys, [b'foo', b'bar'])
 
     @istest
     def unpacks_gets_header(self):
@@ -132,7 +143,18 @@ class TextParserTest(TestCase):
 
         self.assertEqual(header.raw, request_bytes)
         self.assertEqual(header.command, b'gets')
-        self.assertEqual(header.key, b'foo')
+        self.assertEqual(header.keys, [b'foo'])
+
+    @istest
+    def unpacks_gets_header_with_multiple_items(self):
+        parser = TextParser()
+        request_bytes = b'gets foo bar\r\n'
+
+        header = parser.unpack_request_header(request_bytes)
+
+        self.assertEqual(header.raw, request_bytes)
+        self.assertEqual(header.command, b'gets')
+        self.assertEqual(header.keys, [b'foo', b'bar'])
 
     @istest
     def unpacks_delete_header_with_reply(self):

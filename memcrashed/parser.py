@@ -30,7 +30,7 @@ class TextParser(object):
     STORAGE_FIELDS = 'command key bytes noreply'
     DELETE_TOUCH_FIELDS = 'command key noreply'
     INCREASE_DECREASE_FIELDS = 'command key value noreply'
-    RETRIEVAL_FIELDS = 'command key'
+    RETRIEVAL_FIELDS = 'command keys'
 
     StorageRequestHeader = namedtuple('RequestHeader', 'raw %s' % STORAGE_FIELDS)
     DeleteTouchRequestHeader = namedtuple('DeleteTouchRequestHeader', 'raw %s' % DELETE_TOUCH_FIELDS)
@@ -54,12 +54,16 @@ class TextParser(object):
         statement = header_bytes.strip()
         header_fields = statement.split(b' ')
         command = header_fields[0]
-        key = header_fields[1]
         fields = [
             header_bytes,
             command,
-            key,
         ]
+        if self._is_retrieval_command(command):
+            keys = header_fields[1:]
+            fields.append(keys)
+        else:
+            key = header_fields[1]
+            fields.append(key)
         if self._is_storage_command(command):
             bytes_ = int(header_fields[4])
             fields.append(bytes_)
