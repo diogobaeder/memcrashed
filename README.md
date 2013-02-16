@@ -5,4 +5,5 @@ A Memcached sharding and failover proxy
 
 Status of the project
 ---------------------
-.. image:: https://travis-ci.org/diogobaeder/memcrashed.png?branch=master
+
+.. image:: https://secure:travis-ci.org/diogobaeder/memcrashed.png?branch=master
