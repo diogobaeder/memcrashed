@@ -108,3 +108,14 @@ class TextParserTest(TestCase):
         self.assertEqual(header.key, b'foo')
         self.assertEqual(header.bytes, 2)
         self.assertTrue(header.noreply)
+
+    @istest
+    def unpacks_get_header(self):
+        parser = TextParser()
+        request_bytes = b'get foo\r\n'
+
+        header = parser.unpack_request_header(request_bytes)
+
+        self.assertEqual(header.raw, request_bytes)
+        self.assertEqual(header.command, b'get')
+        self.assertEqual(header.key, b'foo')

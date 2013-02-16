@@ -30,11 +30,17 @@ def extract_fields_for_header(header_bytes):
 
 class TextParser(object):
     STORAGE_FIELDS = 'command key bytes noreply'
+    RETRIEVAL_FIELDS = 'command key'
+
     StorageRequestHeader = namedtuple('RequestHeader', 'raw %s' % STORAGE_FIELDS)
+    RetrievalRequestHeader = namedtuple('RetrievalRequestHeader', 'raw %s' % RETRIEVAL_FIELDS)
 
     def unpack_request_header(self, header_bytes):
         fields = self._fields_from_header(header_bytes)
-        request_header = self.StorageRequestHeader(*fields)
+        if self._is_storage_command(fields[1]):
+            request_header = self.StorageRequestHeader(*fields)
+        else:
+            request_header = self.RetrievalRequestHeader(*fields)
         return request_header
 
     def _fields_from_header(self, header_bytes):
@@ -42,12 +48,17 @@ class TextParser(object):
         header_fields = statement.split(b' ')
         command = header_fields[0]
         key = header_fields[1]
-        bytes_ = int(header_fields[4])
-        noreply = statement.endswith(b'noreply')
-        return [
+        fields = [
             header_bytes,
             command,
             key,
-            bytes_,
-            noreply,
         ]
+        if self._is_storage_command(command):
+            bytes_ = int(header_fields[4])
+            noreply = statement.endswith(b'noreply')
+            fields.append(bytes_)
+            fields.append(noreply)
+        return fields
+
+    def _is_storage_command(self, command):
+        return command in (b'set', b'cas')
