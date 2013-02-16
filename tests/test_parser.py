@@ -2,13 +2,13 @@ from unittest import TestCase
 
 from nose.tools import istest
 
-from memcrashed import parser
-from memcrashed.parser import TextParser
+from memcrashed.parser import BinaryParser, TextParser
 
 
-class ParserTest(TestCase):
+class BinaryParserTest(TestCase):
     @istest
     def unpacks_request_header_with_raw_field(self):
+        parser = BinaryParser()
         request_bytes = b'\x80\x01\x00\x03\x08\x00\x00\x00\x00\x00\x00\x0e\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
 
         header = parser.unpack_request_header(request_bytes)
@@ -17,6 +17,7 @@ class ParserTest(TestCase):
 
     @istest
     def unpacks_request_header_with_additional_fields(self):
+        parser = BinaryParser()
         request_bytes = b'\x80\x01\x00\x03\x08\x00\x00\x00\x00\x00\x00\x0e\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
 
         header = parser.unpack_request_header(request_bytes)
@@ -33,6 +34,7 @@ class ParserTest(TestCase):
 
     @istest
     def unpacks_response_header_with_raw_field(self):
+        parser = BinaryParser()
         response_bytes = b'\x80\x01\x00\x03\x08\x00\x00\x00\x00\x00\x00\x0e\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
 
         header = parser.unpack_response_header(response_bytes)
@@ -41,6 +43,7 @@ class ParserTest(TestCase):
 
     @istest
     def unpacks_response_header_with_additional_fields(self):
+        parser = BinaryParser()
         response_bytes = b'\x80\x01\x00\x03\x08\x00\x00\x00\x00\x00\x00\x0e\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
 
         header = parser.unpack_response_header(response_bytes)

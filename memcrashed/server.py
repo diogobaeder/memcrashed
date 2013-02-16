@@ -6,7 +6,7 @@ from tornado import gen, iostream
 from tornado.ioloop import IOLoop
 from tornado.netutil import TCPServer
 
-from memcrashed import parser
+from memcrashed.parser import BinaryParser
 
 
 class Server(TCPServer):
@@ -38,12 +38,13 @@ class BinaryProtocolHandler(object):
 
     def __init__(self, io_loop):
         self.io_loop = io_loop
+        self.parser = BinaryParser()
 
     @gen.engine
     def process(self, stream, backend):
         header_bytes = yield gen.Task(stream.read_bytes, self.HEADER_BYTES)
 
-        headers = parser.unpack_request_header(header_bytes)
+        headers = self.parser.unpack_request_header(header_bytes)
         body_bytes = yield gen.Task(stream.read_bytes, headers.total_body_length)
 
         all_bytes = header_bytes + body_bytes
@@ -52,7 +53,7 @@ class BinaryProtocolHandler(object):
 
         header_bytes = yield gen.Task(backend.read_bytes, self.HEADER_BYTES)
 
-        headers = parser.unpack_response_header(header_bytes)
+        headers = self.parser.unpack_response_header(header_bytes)
         body_bytes = yield gen.Task(backend.read_bytes, headers.total_body_length)
 
         all_bytes = header_bytes + body_bytes
