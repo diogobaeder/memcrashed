@@ -68,7 +68,7 @@ class TextParserTest(TestCase):
         self.assertEqual(header.command, b'set')
         self.assertEqual(header.key, b'foo')
         self.assertEqual(header.bytes, 2)
-        self.assertEqual(header.noreply, False)
+        self.assertFalse(header.noreply)
 
     @istest
     def unpacks_set_header_without_reply(self):
@@ -81,4 +81,30 @@ class TextParserTest(TestCase):
         self.assertEqual(header.command, b'set')
         self.assertEqual(header.key, b'foo')
         self.assertEqual(header.bytes, 2)
-        self.assertEqual(header.noreply, True)
+        self.assertTrue(header.noreply)
+
+    @istest
+    def unpacks_cas_header_with_reply(self):
+        parser = TextParser()
+        request_bytes = b'cas foo 0 1 2 3\r\n'
+
+        header = parser.unpack_request_header(request_bytes)
+
+        self.assertEqual(header.raw, request_bytes)
+        self.assertEqual(header.command, b'cas')
+        self.assertEqual(header.key, b'foo')
+        self.assertEqual(header.bytes, 2)
+        self.assertFalse(header.noreply)
+
+    @istest
+    def unpacks_cas_header_without_reply(self):
+        parser = TextParser()
+        request_bytes = b'cas foo 0 1 2 3 noreply\r\n'
+
+        header = parser.unpack_request_header(request_bytes)
+
+        self.assertEqual(header.raw, request_bytes)
+        self.assertEqual(header.command, b'cas')
+        self.assertEqual(header.key, b'foo')
+        self.assertEqual(header.bytes, 2)
+        self.assertTrue(header.noreply)
