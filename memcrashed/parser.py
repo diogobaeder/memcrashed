@@ -39,12 +39,12 @@ class TextParser(object):
 
     def _fields_from_header(self, header_bytes):
         statement = header_bytes.strip()
-        header_fields = statement.split(' ')
+        header_fields = statement.split(b' ')
         for i in (2, 3, 4):
             header_fields[i] = int(header_fields[i])
         fields = [header_bytes]
         fields.extend(header_fields)
-        if header_fields[-1] == 'noreply':
+        if header_fields[-1] == b'noreply':
             fields.pop()
             fields.append(True)
         else:

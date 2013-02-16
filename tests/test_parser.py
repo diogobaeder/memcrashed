@@ -60,13 +60,13 @@ class TextParserTest(TestCase):
     @istest
     def unpacks_set_header_with_reply(self):
         parser = TextParser()
-        request_bytes = 'set foo 0 1 2\r\n'
+        request_bytes = b'set foo 0 1 2\r\n'
 
         header = parser.unpack_request_header(request_bytes)
 
         self.assertEqual(header.raw, request_bytes)
-        self.assertEqual(header.command, 'set')
-        self.assertEqual(header.key, 'foo')
+        self.assertEqual(header.command, b'set')
+        self.assertEqual(header.key, b'foo')
         self.assertEqual(header.flags, 0)
         self.assertEqual(header.exptime, 1)
         self.assertEqual(header.bytes, 2)
@@ -75,13 +75,13 @@ class TextParserTest(TestCase):
     @istest
     def unpacks_set_header_without_reply(self):
         parser = TextParser()
-        request_bytes = 'set foo 0 1 2 noreply\r\n'
+        request_bytes = b'set foo 0 1 2 noreply\r\n'
 
         header = parser.unpack_request_header(request_bytes)
 
         self.assertEqual(header.raw, request_bytes)
-        self.assertEqual(header.command, 'set')
-        self.assertEqual(header.key, 'foo')
+        self.assertEqual(header.command, b'set')
+        self.assertEqual(header.key, b'foo')
         self.assertEqual(header.flags, 0)
         self.assertEqual(header.exptime, 1)
         self.assertEqual(header.bytes, 2)
