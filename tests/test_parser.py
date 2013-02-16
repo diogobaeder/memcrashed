@@ -121,6 +121,17 @@ class TextParserTest(TestCase):
         self.assertEqual(header.key, b'foo')
 
     @istest
+    def unpacks_gets_header(self):
+        parser = TextParser()
+        request_bytes = b'gets foo\r\n'
+
+        header = parser.unpack_request_header(request_bytes)
+
+        self.assertEqual(header.raw, request_bytes)
+        self.assertEqual(header.command, b'gets')
+        self.assertEqual(header.key, b'foo')
+
+    @istest
     def unpacks_delete_header_with_reply(self):
         parser = TextParser()
         request_bytes = b'delete foo\r\n'

@@ -77,7 +77,7 @@ class TextParser(object):
         return command in (b'set', b'cas')
 
     def _is_retrieval_command(self, command):
-        return command in (b'get', )
+        return command in (b'get', b'gets')
 
     def _is_delete_command(self, command):
         return command in (b'delete', )
