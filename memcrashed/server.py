@@ -87,12 +87,17 @@ class TextProtocolHandler(object):
         yield gen.Task(stream.write, header_bytes)
 
 
-if __name__ == '__main__':  # pragma: no cover
+def create_options_from_arguments(args):
     parser = argparse.ArgumentParser()
-    parser.add_argument('-p', action='store', dest='port', default=22322)
+    parser.add_argument('-p', action='store', dest='port', default=22322, type=int)
     parser.add_argument('-a', action='store', dest='address', default='localhost')
     parser.add_argument('-t', action='store_true', dest='is_text_protocol', default=False)
-    options = parser.parse_args(sys.argv[1:])
+    options = parser.parse_args(args)
+    return options
+
+
+if __name__ == '__main__':  # pragma: no cover
+    options = create_options_from_arguments(sys.argv[1:])
 
     io_loop = IOLoop.instance()
     server = Server(io_loop=io_loop)

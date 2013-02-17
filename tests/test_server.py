@@ -3,6 +3,7 @@ import os
 import socket
 import subprocess
 import sys
+from unittest import TestCase
 import time
 
 import memcache
@@ -11,7 +12,7 @@ from nose.tools import istest
 from tornado import iostream
 from tornado.testing import AsyncTestCase
 
-from memcrashed.server import Server, BinaryProtocolHandler, TextProtocolHandler
+from memcrashed.server import Server, BinaryProtocolHandler, TextProtocolHandler, create_options_from_arguments
 
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
@@ -193,3 +194,23 @@ class TextProtocolHandlerTest(ServerTestCase):
         self.io_loop.add_callback(start_test)
 
         self.wait()
+
+
+class ArgumentParserTest(TestCase):
+    @istest
+    def parses_without_args(self):
+        options = create_options_from_arguments([])
+        self.assertEqual(options.port, 22322)
+        self.assertEqual(options.address, 'localhost')
+        self.assertFalse(options.is_text_protocol)
+
+    @istest
+    def parses_with_short_args(self):
+        options = create_options_from_arguments([
+            '-p', '1234',
+            '-a', 'other.server',
+            '-t'
+        ])
+        self.assertEqual(options.port, 1234)
+        self.assertEqual(options.address, 'other.server')
+        self.assertTrue(options.is_text_protocol)
