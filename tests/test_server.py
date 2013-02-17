@@ -1,6 +1,7 @@
 import os
 import socket
 import subprocess
+import sys
 import time
 
 import memcache
@@ -125,7 +126,7 @@ class ServerTest(ServerTestCase):
 
         server_path = os.path.join(PROJECT_ROOT, 'memcrashed', 'server.py')
         args = [
-            'python',
+            sys.executable,
             server_path,
             '-p', str(port),
             '-a', host,
