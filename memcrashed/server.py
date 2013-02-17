@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
+import argparse
 import socket
+import sys
 
 from tornado import gen, iostream
 from tornado.ioloop import IOLoop
@@ -86,7 +88,15 @@ class TextProtocolHandler(object):
 
 
 if __name__ == '__main__':  # pragma: no cover
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-p', action='store', dest='port', default=22322)
+    parser.add_argument('-a', action='store', dest='address', default='localhost')
+    parser.add_argument('-t', action='store_true', dest='is_text_protocol', default=False)
+    options = parser.parse_args(sys.argv[1:])
+
     io_loop = IOLoop.instance()
     server = Server(io_loop=io_loop)
-    server.listen(22322)
+    if options.is_text_protocol:
+        server.set_handler('text')
+    server.listen(options.port, options.address)
     io_loop.start()

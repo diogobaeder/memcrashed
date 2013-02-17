@@ -1,4 +1,7 @@
+import os
 import socket
+import subprocess
+import time
 
 import memcache
 from mock import patch, MagicMock
@@ -9,6 +12,9 @@ from tornado.testing import AsyncTestCase
 from memcrashed.server import Server, BinaryProtocolHandler, TextProtocolHandler
 
 
+PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
+
+
 class ServerTestCase(AsyncTestCase):
     def setUp(self):
         super(ServerTestCase, self).setUp()
@@ -16,6 +22,7 @@ class ServerTestCase(AsyncTestCase):
         port = 11211
         client = memcache.Client(['%s:%s' % (host, port)])
         client.flush_all()
+        client.disconnect_all()
 
 
 class SmokeTest(AsyncTestCase):
@@ -26,6 +33,7 @@ class SmokeTest(AsyncTestCase):
 
         client = memcache.Client(['%s:%s' % (host, port)])
         data = client.get_stats()
+        client.disconnect_all()
 
         self.assertIsNotNone(data)
 
@@ -109,6 +117,31 @@ class ServerTest(ServerTestCase):
         server = Server(io_loop=self.io_loop)
         server.set_handler('text')
         self.assertIs(server.io_loop, server.handler.io_loop)
+
+    @istest
+    def starts_the_server_in_a_specific_port(self):
+        host = '127.0.0.1'
+        port = 12345
+
+        server_path = os.path.join(PROJECT_ROOT, 'memcrashed', 'server.py')
+        args = [
+            'python',
+            server_path,
+            '-p', str(port),
+            '-a', host,
+            '-t'
+        ]
+        env = {
+            'PYTHONPATH': PROJECT_ROOT,
+        }
+        proc = subprocess.Popen(args, env=env)
+        time.sleep(0.1)
+        try:
+            server = '{}:{}'.format(host, port)
+            client = memcache.Client([server])
+            self.assertTrue(client.set('foo', 'bar'))
+        finally:
+            proc.kill()
 
 
 class TextProtocolHandlerTest(ServerTestCase):
