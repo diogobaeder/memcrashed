@@ -12,7 +12,7 @@ from nose.tools import istest
 from tornado import iostream
 from tornado.testing import AsyncTestCase
 
-from memcrashed.server import Server, BinaryProtocolHandler, TextProtocolHandler, create_options_from_arguments
+from memcrashed.server import Server, BinaryProtocolHandler, TextProtocolHandler, create_options_from_arguments, start_server
 
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
@@ -225,3 +225,43 @@ class ArgumentParserTest(TestCase):
         self.assertEqual(options.port, 1234)
         self.assertEqual(options.address, 'other.server')
         self.assertTrue(options.is_text_protocol)
+
+
+class InitializationTest(TestCase):
+    @istest
+    @patch('memcrashed.server.Server')
+    @patch('tornado.ioloop.IOLoop.instance')
+    def starts_the_server_with_provided_options(self, io_loop_instance, MockServer):
+        io_loop = io_loop_instance.return_value
+
+        class options(object):
+            is_text_protocol = False
+            port = 'some port'
+            address = 'some address'
+
+        start_server(options)
+
+        server_instance = MockServer.return_value
+        MockServer.assert_called_with(io_loop=io_loop)
+        self.assertFalse(server_instance.set_handler.called)
+        server_instance.listen.assert_called_with(options.port, options.address)
+        io_loop.start.assert_called_with()
+
+    @istest
+    @patch('memcrashed.server.Server')
+    @patch('tornado.ioloop.IOLoop.instance')
+    def starts_the_server_with_text_protocol(self, io_loop_instance, MockServer):
+        io_loop = io_loop_instance.return_value
+
+        class options(object):
+            is_text_protocol = True
+            port = 'some port'
+            address = 'some address'
+
+        start_server(options)
+
+        server_instance = MockServer.return_value
+        MockServer.assert_called_with(io_loop=io_loop)
+        server_instance.set_handler.assert_called_with('text')
+        server_instance.listen.assert_called_with(options.port, options.address)
+        io_loop.start.assert_called_with()

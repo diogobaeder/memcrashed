@@ -101,12 +101,15 @@ def create_options_from_arguments(args):
     return options
 
 
-if __name__ == '__main__':  # pragma: no cover
-    options = create_options_from_arguments(sys.argv[1:])
-
+def start_server(options):
     io_loop = IOLoop.instance()
     server = Server(io_loop=io_loop)
     if options.is_text_protocol:
         server.set_handler('text')
     server.listen(options.port, options.address)
     io_loop.start()
+
+
+if __name__ == '__main__':  # pragma: no cover
+    options = create_options_from_arguments(sys.argv[1:])
+    start_server(options)
