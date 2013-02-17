@@ -32,7 +32,7 @@ def server_running(host, port, args=[]):
         'PYTHONPATH': PROJECT_ROOT,
     }
     proc = subprocess.Popen(command_args, env=env)
-    time.sleep(0.1)
+    time.sleep(0.2)
     try:
         yield
     finally:
