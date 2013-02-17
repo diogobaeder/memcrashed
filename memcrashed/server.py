@@ -110,6 +110,10 @@ def start_server(options):
     io_loop.start()
 
 
-if __name__ == '__main__':  # pragma: no cover
+def main():
     options = create_options_from_arguments(sys.argv[1:])
     start_server(options)
+
+
+if __name__ == '__main__':  # pragma: no cover
+    main()

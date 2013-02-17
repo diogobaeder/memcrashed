@@ -21,7 +21,9 @@ A Memcached sharding and failover proxy""",
       install_requires=[
           'tornado',
       ],
-      entry_points="""
-      # -*- Entry points: -*-
-      """,
+      entry_points={
+          'console_scripts': [
+              'memcrashed = memcrashed.server:main',
+          ],
+      },
       )

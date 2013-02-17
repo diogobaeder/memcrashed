@@ -12,7 +12,7 @@ from nose.tools import istest
 from tornado import iostream
 from tornado.testing import AsyncTestCase
 
-from memcrashed.server import Server, BinaryProtocolHandler, TextProtocolHandler, create_options_from_arguments, start_server
+from memcrashed.server import Server, BinaryProtocolHandler, TextProtocolHandler, create_options_from_arguments, start_server, main
 
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
@@ -265,3 +265,12 @@ class InitializationTest(TestCase):
         server_instance.set_handler.assert_called_with('text')
         server_instance.listen.assert_called_with(options.port, options.address)
         io_loop.start.assert_called_with()
+
+    @istest
+    @patch('memcrashed.server.create_options_from_arguments')
+    @patch('memcrashed.server.start_server')
+    def runs_main_function(self, start_server, create_options_from_arguments):
+        main()
+
+        create_options_from_arguments.assert_called_with(sys.argv[1:])
+        start_server.assert_called_with(create_options_from_arguments.return_value)
