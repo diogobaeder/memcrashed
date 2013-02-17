@@ -3,7 +3,7 @@ import os
 import socket
 import subprocess
 import sys
-from unittest import TestCase
+from unittest import TestCase, skipUnless
 import time
 
 import memcache
@@ -13,6 +13,13 @@ from tornado import iostream
 from tornado.testing import AsyncTestCase
 
 from memcrashed.server import Server, BinaryProtocolHandler, TextProtocolHandler, create_options_from_arguments, start_server, main
+
+try:
+    import pylibmc
+except ImportError:
+    PYLIBMC_EXISTS = False
+else:
+    PYLIBMC_EXISTS = True
 
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
@@ -143,7 +150,7 @@ class ServerTest(ServerTestCase):
         self.assertIs(server.io_loop, server.handler.io_loop)
 
     @istest
-    def starts_the_server_in_a_specific_port(self):
+    def stores_a_value_successfully(self):
         host = '127.0.0.1'
         port = 12345
 
@@ -194,6 +201,19 @@ class TextProtocolHandlerTest(ServerTestCase):
         self.io_loop.add_callback(start_test)
 
         self.wait()
+
+
+class BinaryProtocolHandlerTest(ServerTestCase):
+    @istest
+    @skipUnless(PYLIBMC_EXISTS, "Can't run in Python 3 because pylibmc is not yet ported.")
+    def stores_a_value_successfully(self):
+        host = '127.0.0.1'
+        port = 12345
+
+        with server_running(host, port):
+            server = '{}:{}'.format(host, port)
+            client = pylibmc.Client([server], binary=True)
+            self.assertTrue(client.set('foo', 'bar'))
 
 
 class ArgumentParserTest(TestCase):
