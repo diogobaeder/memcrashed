@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 import os
 import socket
 import subprocess
@@ -14,6 +15,27 @@ from memcrashed.server import Server, BinaryProtocolHandler, TextProtocolHandler
 
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
+
+
+@contextmanager
+def server_running(host, port, args=[]):
+    server_path = os.path.join(PROJECT_ROOT, 'memcrashed', 'server.py')
+    command_args = [
+        sys.executable,
+        server_path,
+        '-p', str(port),
+        '-a', host,
+    ]
+    command_args.extend(args)
+    env = {
+        'PYTHONPATH': PROJECT_ROOT,
+    }
+    proc = subprocess.Popen(command_args, env=env)
+    time.sleep(0.1)
+    try:
+        yield
+    finally:
+        proc.kill()
 
 
 class ServerTestCase(AsyncTestCase):
@@ -124,25 +146,10 @@ class ServerTest(ServerTestCase):
         host = '127.0.0.1'
         port = 12345
 
-        server_path = os.path.join(PROJECT_ROOT, 'memcrashed', 'server.py')
-        args = [
-            sys.executable,
-            server_path,
-            '-p', str(port),
-            '-a', host,
-            '-t'
-        ]
-        env = {
-            'PYTHONPATH': PROJECT_ROOT,
-        }
-        proc = subprocess.Popen(args, env=env)
-        time.sleep(0.1)
-        try:
+        with server_running(host, port, args=['-t']):
             server = '{}:{}'.format(host, port)
             client = memcache.Client([server])
             self.assertTrue(client.set('foo', 'bar'))
-        finally:
-            proc.kill()
 
 
 class TextProtocolHandlerTest(ServerTestCase):
