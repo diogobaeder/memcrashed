@@ -89,9 +89,9 @@ class TextProtocolHandler(object):
 
 def create_options_from_arguments(args):
     parser = argparse.ArgumentParser()
-    parser.add_argument('-p', action='store', dest='port', default=22322, type=int)
-    parser.add_argument('-a', action='store', dest='address', default='localhost')
-    parser.add_argument('-t', action='store_true', dest='is_text_protocol', default=False)
+    parser.add_argument('-p', '--port', action='store', dest='port', default=22322, type=int)
+    parser.add_argument('-a', '--address', action='store', dest='address', default='localhost')
+    parser.add_argument('-t', '--text-protocol', action='store_true', dest='is_text_protocol', default=False)
     options = parser.parse_args(args)
     return options
 

@@ -214,3 +214,14 @@ class ArgumentParserTest(TestCase):
         self.assertEqual(options.port, 1234)
         self.assertEqual(options.address, 'other.server')
         self.assertTrue(options.is_text_protocol)
+
+    @istest
+    def parses_with_long_args(self):
+        options = create_options_from_arguments([
+            '--port=1234',
+            '--address=other.server',
+            '--text-protocol'
+        ])
+        self.assertEqual(options.port, 1234)
+        self.assertEqual(options.address, 'other.server')
+        self.assertTrue(options.is_text_protocol)
