@@ -88,10 +88,15 @@ class TextProtocolHandler(object):
 
 
 def create_options_from_arguments(args):
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-p', '--port', action='store', dest='port', default=22322, type=int)
-    parser.add_argument('-a', '--address', action='store', dest='address', default='localhost')
-    parser.add_argument('-t', '--text-protocol', action='store_true', dest='is_text_protocol', default=False)
+    default_port = 22322
+    default_address = 'localhost'
+    parser = argparse.ArgumentParser(description="A Memcached sharding and failover proxy")
+    parser.add_argument('-p', '--port', action='store', dest='port', default=22322, type=int,
+                        help='Port in which the proxy will run. "{}" by default.'.format(default_port))
+    parser.add_argument('-a', '--address', action='store', dest='address', default='localhost',
+                        help='Address to which the proxy will be bound. "{}" by default.'.format(default_address))
+    parser.add_argument('-t', '--text-protocol', action='store_true', dest='is_text_protocol', default=False,
+                        help='If provided, will run over Memcache text protocol; Otherwise, runs over binary protocol (faster and more robust).')
     options = parser.parse_args(args)
     return options
 
