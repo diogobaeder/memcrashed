@@ -19,7 +19,12 @@ class Server(TCPServer):
 
     def handle_stream(self, stream, address):
         self.ensure_backend()
-        self.handler.process(stream, self.backend)
+        self._start_interaction(stream)
+
+    @gen.engine
+    def _start_interaction(self, stream):
+        while not stream.closed():
+            yield gen.Task(self.handler.process, stream, self.backend)
 
     def set_handler(self, handler_type):
         if handler_type == 'text':
@@ -46,7 +51,7 @@ class BinaryProtocolHandler(object):
         self.parser = BinaryParser()
 
     @gen.engine
-    def process(self, stream, backend):
+    def process(self, stream, backend, callback):
         header_bytes = yield gen.Task(stream.read_bytes, self.HEADER_BYTES)
 
         headers = self.parser.unpack_request_header(header_bytes)
@@ -64,6 +69,7 @@ class BinaryProtocolHandler(object):
         all_bytes = header_bytes + body_bytes
 
         yield gen.Task(stream.write, all_bytes)
+        callback()
 
 
 class TextProtocolHandler(object):
@@ -73,7 +79,7 @@ class TextProtocolHandler(object):
         self.io_loop = io_loop
 
     @gen.engine
-    def process(self, stream, backend):
+    def process(self, stream, backend, callback):
         header_bytes = yield gen.Task(stream.read_until, self.END)
 
         body_bytes = yield gen.Task(stream.read_until, self.END)
@@ -85,6 +91,7 @@ class TextProtocolHandler(object):
         header_bytes = yield gen.Task(backend.read_until, self.END)
 
         yield gen.Task(stream.write, header_bytes)
+        callback()
 
 
 def create_options_from_arguments(args):

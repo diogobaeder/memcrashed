@@ -1,3 +1,4 @@
+import binascii
 from contextlib import contextmanager
 import os
 import socket
@@ -7,7 +8,7 @@ from unittest import TestCase, skipUnless
 import time
 
 import memcache
-from mock import patch, MagicMock
+from mock import patch, MagicMock, ANY
 from nose.tools import istest
 from tornado import iostream
 from tornado.testing import AsyncTestCase
@@ -20,6 +21,7 @@ except ImportError:
     PYLIBMC_EXISTS = False
 else:
     PYLIBMC_EXISTS = True
+PYLIBMC_SKIP_REASON = "Can't run in Python 3 because pylibmc is not yet ported."
 
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(__file__))
@@ -70,21 +72,19 @@ class SmokeTest(AsyncTestCase):
 
 
 class ServerTest(ServerTestCase):
+    def response_without_cas(self, data):
+        return data[:-8]
+
     @istest
     def reads_back_a_written_value(self):
         '''
-        This test uses low-level sockets to check if the Server is respecting the protocol when getting a value from memcached.
+        This test uses low-level sockets to check if the Server is respecting the protocol when setting a value from memcached.
         '''
         host = '127.0.0.1'
         port = 22322
 
-        request_header_bytes = b'\x80\x0c\x00\x03\x00\x00\x00\x00\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-        request_body_bytes = b'foo'
-        request_bytes = request_header_bytes + request_body_bytes
-
-        response_header_bytes = b'\x81\x0c\x00\x03\x00\x00\x00\x01\x00\x00\x00\x03\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
-        response_body_bytes = b'foo'
-        response_bytes = response_header_bytes + response_body_bytes
+        request_bytes = binascii.unhexlify(b'80010003080000000000000e0000000000000000000000000000000000000000666f6f626172')
+        response_bytes = binascii.unhexlify(b'81010000000000000000000000000000000000000000012b')
 
         server = Server(io_loop=self.io_loop)
         server.listen(port, address=host)
@@ -102,7 +102,7 @@ class ServerTest(ServerTestCase):
             stream.read_bytes(len(response_bytes), receive_response)
 
         def receive_response(data):
-            self.assertEqual(data, response_bytes)
+            self.assertEqual(self.response_without_cas(data), self.response_without_cas(response_bytes))
             stream.close()
             self.stop()
 
@@ -124,12 +124,15 @@ class ServerTest(ServerTestCase):
     def passes_request_to_handler(self):
         server = Server(io_loop=self.io_loop)
         handler = MagicMock(spec=BinaryProtocolHandler)
+        stream = MagicMock(iostream.IOStream)
+
+        stream.closed.side_effect = [False, True]
 
         with patch.object(server, 'handler', handler):
             server.backend = 'some backend'
-            server.handle_stream('some stream', 'some address')
+            server.handle_stream(stream, 'some address')
 
-            handler.process.assert_called_with('some stream', 'some backend')
+            handler.process.assert_called_with(stream, 'some backend', callback=ANY)
 
     @istest
     def sets_a_text_handler(self):
@@ -205,7 +208,7 @@ class TextProtocolHandlerTest(ServerTestCase):
 
 class BinaryProtocolHandlerTest(ServerTestCase):
     @istest
-    @skipUnless(PYLIBMC_EXISTS, "Can't run in Python 3 because pylibmc is not yet ported.")
+    @skipUnless(PYLIBMC_EXISTS, PYLIBMC_SKIP_REASON)
     def stores_a_value_successfully(self):
         host = '127.0.0.1'
         port = 12345
@@ -213,6 +216,18 @@ class BinaryProtocolHandlerTest(ServerTestCase):
         with server_running(host, port):
             server = '{}:{}'.format(host, port)
             client = pylibmc.Client([server], binary=True)
+            self.assertTrue(client.set('foo', 'bar'))
+
+    @istest
+    @skipUnless(PYLIBMC_EXISTS, PYLIBMC_SKIP_REASON)
+    def stores_a_value_twice_without_error(self):
+        host = '127.0.0.1'
+        port = 12345
+
+        with server_running(host, port):
+            server = '{}:{}'.format(host, port)
+            client = pylibmc.Client([server], binary=True)
+            client.set('foo', 'bar')
             self.assertTrue(client.set('foo', 'bar'))
 
 
