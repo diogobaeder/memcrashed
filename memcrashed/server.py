@@ -75,13 +75,13 @@ class BinaryProtocolHandler(object):
 
     @gen.engine
     def process(self, client_stream, backend_stream, callback):
-        stream_data = BytesIO()
-        yield gen.Task(self._read_full_chunk, self.parser.unpack_request_header, stream_data, client_stream)
-        yield gen.Task(backend_stream.write, stream_data.getvalue())
+        with BytesIO() as stream_data:
+            yield gen.Task(self._read_full_chunk, self.parser.unpack_request_header, stream_data, client_stream)
+            yield gen.Task(backend_stream.write, stream_data.getvalue())
 
-        stream_data = BytesIO()
-        yield gen.Task(self._read_full_chunk, self.parser.unpack_response_header, stream_data, backend_stream)
-        yield gen.Task(client_stream.write, stream_data.getvalue())
+        with BytesIO() as stream_data:
+            yield gen.Task(self._read_full_chunk, self.parser.unpack_response_header, stream_data, backend_stream)
+            yield gen.Task(client_stream.write, stream_data.getvalue())
 
         callback()
 
