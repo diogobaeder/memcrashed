@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+from io import BytesIO
 import socket
 import sys
 
@@ -74,50 +75,44 @@ class BinaryProtocolHandler(object):
 
     @gen.engine
     def process(self, stream, backend, callback):
-        is_batch_operation = False
+        stream_buffer = BytesIO()
 
         header_bytes = yield gen.Task(stream.read_bytes, self.HEADER_BYTES)
+        stream_buffer.write(header_bytes)
         headers = self.parser.unpack_request_header(header_bytes)
         if headers.total_body_length > 0:
             body_bytes = yield gen.Task(stream.read_bytes, headers.total_body_length)
-            header_and_body_bytes = header_bytes + body_bytes
-        else:
-            header_and_body_bytes = header_bytes
+            stream_buffer.write(body_bytes)
 
         if headers.opcode in self.QUIET_OPS:
-            is_batch_operation = True
             while headers.opcode is not self.NO_OP:
                 header_bytes = yield gen.Task(stream.read_bytes, self.HEADER_BYTES)
+                stream_buffer.write(header_bytes)
                 headers = self.parser.unpack_request_header(header_bytes)
                 if headers.total_body_length > 0:
                     body_bytes = yield gen.Task(stream.read_bytes, headers.total_body_length)
-                    next_bytes = header_bytes + body_bytes
-                else:
-                    next_bytes = header_bytes
-                header_and_body_bytes += next_bytes
+                    stream_buffer.write(body_bytes)
 
-        yield gen.Task(backend.write, header_and_body_bytes)
+        yield gen.Task(backend.write, stream_buffer.getvalue())
+        stream_buffer = BytesIO()
 
         header_bytes = yield gen.Task(backend.read_bytes, self.HEADER_BYTES)
+        stream_buffer.write(header_bytes)
         headers = self.parser.unpack_response_header(header_bytes)
         if headers.total_body_length > 0:
             body_bytes = yield gen.Task(backend.read_bytes, headers.total_body_length)
-            header_and_body_bytes = header_bytes + body_bytes
-        else:
-            header_and_body_bytes = header_bytes
+            stream_buffer.write(body_bytes)
 
-        if is_batch_operation:
+        if headers.opcode in self.QUIET_OPS:
             while headers.opcode is not self.NO_OP:
                 header_bytes = yield gen.Task(backend.read_bytes, self.HEADER_BYTES)
+                stream_buffer.write(header_bytes)
                 headers = self.parser.unpack_response_header(header_bytes)
                 if headers.total_body_length > 0:
                     body_bytes = yield gen.Task(backend.read_bytes, headers.total_body_length)
-                    next_bytes = header_bytes + body_bytes
-                else:
-                    next_bytes = header_bytes
-                header_and_body_bytes += next_bytes
+                    stream_buffer.write(body_bytes)
 
-        yield gen.Task(stream.write, header_and_body_bytes)
+        yield gen.Task(stream.write, stream_buffer.getvalue())
         callback()
 
 
