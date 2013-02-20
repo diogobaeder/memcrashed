@@ -87,14 +87,14 @@ class BinaryProtocolHandler(object):
 
     @gen.engine
     def _read_full_chunk(self, unpack, stream_data, stream, callback):
-        headers = yield gen.Task(self._read_bytes, stream, stream_data, unpack)
-        if headers.opcode in self.QUIET_OPS:
-            while headers.opcode is not self.NO_OP:
-                headers = yield gen.Task(self._read_bytes, stream, stream_data, unpack)
+        while True:
+            headers = yield gen.Task(self._read_chunk, stream, stream_data, unpack)
+            if headers.opcode not in self.QUIET_OPS:
+                break
         callback()
 
     @gen.engine
-    def _read_bytes(self, stream, stream_data, unpack, callback):
+    def _read_chunk(self, stream, stream_data, unpack, callback):
         header_bytes = yield gen.Task(stream.read_bytes, self.HEADER_BYTES)
         stream_data.write(header_bytes)
         headers = unpack(header_bytes)
