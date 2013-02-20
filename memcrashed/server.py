@@ -74,46 +74,34 @@ class BinaryProtocolHandler(object):
         self.parser = BinaryParser()
 
     @gen.engine
-    def process(self, stream, backend, callback):
-        stream_buffer = BytesIO()
+    def process(self, client_stream, backend_stream, callback):
+        stream_data = BytesIO()
+        yield gen.Task(self._read_full_chunk, self.parser.unpack_request_header, stream_data, client_stream)
+        yield gen.Task(backend_stream.write, stream_data.getvalue())
 
+        stream_data = BytesIO()
+        yield gen.Task(self._read_full_chunk, self.parser.unpack_response_header, stream_data, backend_stream)
+        yield gen.Task(client_stream.write, stream_data.getvalue())
+
+        callback()
+
+    @gen.engine
+    def _read_full_chunk(self, unpack, stream_data, stream, callback):
+        headers = yield gen.Task(self._read_bytes, stream, stream_data, unpack)
+        if headers.opcode in self.QUIET_OPS:
+            while headers.opcode is not self.NO_OP:
+                headers = yield gen.Task(self._read_bytes, stream, stream_data, unpack)
+        callback()
+
+    @gen.engine
+    def _read_bytes(self, stream, stream_data, unpack, callback):
         header_bytes = yield gen.Task(stream.read_bytes, self.HEADER_BYTES)
-        stream_buffer.write(header_bytes)
-        headers = self.parser.unpack_request_header(header_bytes)
+        stream_data.write(header_bytes)
+        headers = unpack(header_bytes)
         if headers.total_body_length > 0:
             body_bytes = yield gen.Task(stream.read_bytes, headers.total_body_length)
-            stream_buffer.write(body_bytes)
-
-        if headers.opcode in self.QUIET_OPS:
-            while headers.opcode is not self.NO_OP:
-                header_bytes = yield gen.Task(stream.read_bytes, self.HEADER_BYTES)
-                stream_buffer.write(header_bytes)
-                headers = self.parser.unpack_request_header(header_bytes)
-                if headers.total_body_length > 0:
-                    body_bytes = yield gen.Task(stream.read_bytes, headers.total_body_length)
-                    stream_buffer.write(body_bytes)
-
-        yield gen.Task(backend.write, stream_buffer.getvalue())
-        stream_buffer = BytesIO()
-
-        header_bytes = yield gen.Task(backend.read_bytes, self.HEADER_BYTES)
-        stream_buffer.write(header_bytes)
-        headers = self.parser.unpack_response_header(header_bytes)
-        if headers.total_body_length > 0:
-            body_bytes = yield gen.Task(backend.read_bytes, headers.total_body_length)
-            stream_buffer.write(body_bytes)
-
-        if headers.opcode in self.QUIET_OPS:
-            while headers.opcode is not self.NO_OP:
-                header_bytes = yield gen.Task(backend.read_bytes, self.HEADER_BYTES)
-                stream_buffer.write(header_bytes)
-                headers = self.parser.unpack_response_header(header_bytes)
-                if headers.total_body_length > 0:
-                    body_bytes = yield gen.Task(backend.read_bytes, headers.total_body_length)
-                    stream_buffer.write(body_bytes)
-
-        yield gen.Task(stream.write, stream_buffer.getvalue())
-        callback()
+            stream_data.write(body_bytes)
+        callback(headers)
 
 
 class TextProtocolHandler(object):
@@ -123,18 +111,18 @@ class TextProtocolHandler(object):
         self.io_loop = io_loop
 
     @gen.engine
-    def process(self, stream, backend, callback):
-        header_bytes = yield gen.Task(stream.read_until, self.END)
+    def process(self, client_stream, backend_stream, callback):
+        header_bytes = yield gen.Task(client_stream.read_until, self.END)
 
-        body_bytes = yield gen.Task(stream.read_until, self.END)
+        body_bytes = yield gen.Task(client_stream.read_until, self.END)
 
         all_bytes = header_bytes + body_bytes
 
-        yield gen.Task(backend.write, all_bytes)
+        yield gen.Task(backend_stream.write, all_bytes)
 
-        header_bytes = yield gen.Task(backend.read_until, self.END)
+        header_bytes = yield gen.Task(backend_stream.read_until, self.END)
 
-        yield gen.Task(stream.write, header_bytes)
+        yield gen.Task(client_stream.write, header_bytes)
         callback()
 
 
