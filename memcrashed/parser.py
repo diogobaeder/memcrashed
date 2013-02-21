@@ -40,11 +40,11 @@ class TextParser(object):
     def unpack_request_header(self, header_bytes):
         fields = self._fields_from_header(header_bytes)
         command = fields[1]
-        if self._is_storage_command(command):
+        if self.is_storage_command(command):
             request_header = self.StorageRequestHeader(*fields)
-        elif self._is_increase_decrease_command(command):
+        elif self.is_increase_decrease_command(command):
             request_header = self.IncreaseDecreaseRequestHeader(*fields)
-        elif self._is_delete_touch_command(command):
+        elif self.is_delete_touch_command(command):
             request_header = self.DeleteTouchRequestHeader(*fields)
         else:
             request_header = self.RetrievalRequestHeader(*fields)
@@ -58,31 +58,31 @@ class TextParser(object):
             header_bytes,
             command,
         ]
-        if self._is_retrieval_command(command):
+        if self.is_retrieval_command(command):
             keys = header_fields[1:]
             fields.append(keys)
         else:
             key = header_fields[1]
             fields.append(key)
-        if self._is_storage_command(command):
+        if self.is_storage_command(command):
             bytes_ = int(header_fields[4])
             fields.append(bytes_)
-        if self._is_increase_decrease_command(command):
+        if self.is_increase_decrease_command(command):
             value = int(header_fields[2])
             fields.append(value)
-        if not self._is_retrieval_command(command):
+        if not self.is_retrieval_command(command):
             noreply = statement.endswith(b'noreply')
             fields.append(noreply)
         return fields
 
-    def _is_storage_command(self, command):
+    def is_storage_command(self, command):
         return command in (b'set', b'cas')
 
-    def _is_retrieval_command(self, command):
+    def is_retrieval_command(self, command):
         return command in (b'get', b'gets')
 
-    def _is_delete_touch_command(self, command):
+    def is_delete_touch_command(self, command):
         return command in (b'delete', b'touch')
 
-    def _is_increase_decrease_command(self, command):
+    def is_increase_decrease_command(self, command):
         return command in (b'incr', b'decr')

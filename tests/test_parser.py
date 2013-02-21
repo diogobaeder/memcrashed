@@ -72,6 +72,7 @@ class TextParserTest(TestCase):
         self.assertEqual(header.key, b'foo')
         self.assertEqual(header.bytes, 2)
         self.assertFalse(header.noreply)
+        self.assertTrue(parser.is_storage_command(header.command))
 
     @istest
     def unpacks_set_header_without_reply(self):
@@ -85,6 +86,7 @@ class TextParserTest(TestCase):
         self.assertEqual(header.key, b'foo')
         self.assertEqual(header.bytes, 2)
         self.assertTrue(header.noreply)
+        self.assertTrue(parser.is_storage_command(header.command))
 
     @istest
     def unpacks_cas_header_with_reply(self):
@@ -98,6 +100,7 @@ class TextParserTest(TestCase):
         self.assertEqual(header.key, b'foo')
         self.assertEqual(header.bytes, 2)
         self.assertFalse(header.noreply)
+        self.assertTrue(parser.is_storage_command(header.command))
 
     @istest
     def unpacks_cas_header_without_reply(self):
@@ -111,6 +114,7 @@ class TextParserTest(TestCase):
         self.assertEqual(header.key, b'foo')
         self.assertEqual(header.bytes, 2)
         self.assertTrue(header.noreply)
+        self.assertTrue(parser.is_storage_command(header.command))
 
     @istest
     def unpacks_get_header(self):
@@ -122,6 +126,7 @@ class TextParserTest(TestCase):
         self.assertEqual(header.raw, request_bytes)
         self.assertEqual(header.command, b'get')
         self.assertEqual(header.keys, [b'foo'])
+        self.assertTrue(parser.is_retrieval_command(header.command))
 
     @istest
     def unpacks_get_header_with_multiple_items(self):
@@ -133,6 +138,7 @@ class TextParserTest(TestCase):
         self.assertEqual(header.raw, request_bytes)
         self.assertEqual(header.command, b'get')
         self.assertEqual(header.keys, [b'foo', b'bar'])
+        self.assertTrue(parser.is_retrieval_command(header.command))
 
     @istest
     def unpacks_gets_header(self):
@@ -144,6 +150,7 @@ class TextParserTest(TestCase):
         self.assertEqual(header.raw, request_bytes)
         self.assertEqual(header.command, b'gets')
         self.assertEqual(header.keys, [b'foo'])
+        self.assertTrue(parser.is_retrieval_command(header.command))
 
     @istest
     def unpacks_gets_header_with_multiple_items(self):
@@ -155,6 +162,7 @@ class TextParserTest(TestCase):
         self.assertEqual(header.raw, request_bytes)
         self.assertEqual(header.command, b'gets')
         self.assertEqual(header.keys, [b'foo', b'bar'])
+        self.assertTrue(parser.is_retrieval_command(header.command))
 
     @istest
     def unpacks_delete_header_with_reply(self):
@@ -167,6 +175,7 @@ class TextParserTest(TestCase):
         self.assertEqual(header.command, b'delete')
         self.assertEqual(header.key, b'foo')
         self.assertFalse(header.noreply)
+        self.assertTrue(parser.is_delete_touch_command(header.command))
 
     @istest
     def unpacks_delete_header_without_reply(self):
@@ -179,6 +188,7 @@ class TextParserTest(TestCase):
         self.assertEqual(header.command, b'delete')
         self.assertEqual(header.key, b'foo')
         self.assertTrue(header.noreply)
+        self.assertTrue(parser.is_delete_touch_command(header.command))
 
     @istest
     def unpacks_incr_header_with_reply(self):
@@ -192,6 +202,7 @@ class TextParserTest(TestCase):
         self.assertEqual(header.key, b'foo')
         self.assertEqual(header.value, 123)
         self.assertFalse(header.noreply)
+        self.assertTrue(parser.is_increase_decrease_command(header.command))
 
     @istest
     def unpacks_incr_header_without_reply(self):
@@ -205,6 +216,7 @@ class TextParserTest(TestCase):
         self.assertEqual(header.key, b'foo')
         self.assertEqual(header.value, 123)
         self.assertTrue(header.noreply)
+        self.assertTrue(parser.is_increase_decrease_command(header.command))
 
     @istest
     def unpacks_decr_header_with_reply(self):
@@ -218,6 +230,7 @@ class TextParserTest(TestCase):
         self.assertEqual(header.key, b'foo')
         self.assertEqual(header.value, 123)
         self.assertFalse(header.noreply)
+        self.assertTrue(parser.is_increase_decrease_command(header.command))
 
     @istest
     def unpacks_decr_header_without_reply(self):
@@ -231,6 +244,7 @@ class TextParserTest(TestCase):
         self.assertEqual(header.key, b'foo')
         self.assertEqual(header.value, 123)
         self.assertTrue(header.noreply)
+        self.assertTrue(parser.is_increase_decrease_command(header.command))
 
     @istest
     def unpacks_touch_header_with_reply(self):
@@ -243,6 +257,7 @@ class TextParserTest(TestCase):
         self.assertEqual(header.command, b'touch')
         self.assertEqual(header.key, b'foo')
         self.assertFalse(header.noreply)
+        self.assertTrue(parser.is_delete_touch_command(header.command))
 
     @istest
     def unpacks_touch_header_without_reply(self):
@@ -255,3 +270,4 @@ class TextParserTest(TestCase):
         self.assertEqual(header.command, b'touch')
         self.assertEqual(header.key, b'foo')
         self.assertTrue(header.noreply)
+        self.assertTrue(parser.is_delete_touch_command(header.command))
