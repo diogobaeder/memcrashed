@@ -152,16 +152,6 @@ class ServerTest(ServerTestCase):
         server.set_handler('text')
         self.assertIs(server.io_loop, server.handler.io_loop)
 
-    @istest
-    def stores_a_value_successfully(self):
-        host = '127.0.0.1'
-        port = 12345
-
-        with server_running(host, port, args=['-t']):
-            server = '{}:{}'.format(host, port)
-            client = memcache.Client([server])
-            self.assertTrue(client.set('foo', 'bar'))
-
 
 class TextProtocolHandlerTest(ServerTestCase):
     def command_for_lines(self, lines):
@@ -204,6 +194,16 @@ class TextProtocolHandlerTest(ServerTestCase):
         self.io_loop.add_callback(start_test)
 
         self.wait()
+
+    @istest
+    def stores_a_value_successfully(self):
+        host = '127.0.0.1'
+        port = 12345
+
+        with server_running(host, port, args=['-t']):
+            server = '{}:{}'.format(host, port)
+            client = memcache.Client([server])
+            self.assertTrue(client.set('foo', 'bar'))
 
 
 class BinaryProtocolHandlerTest(ServerTestCase):
