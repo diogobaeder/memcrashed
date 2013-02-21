@@ -53,9 +53,9 @@ class ServerTestCase(AsyncTestCase):
         super(ServerTestCase, self).setUp()
         host = '127.0.0.1'
         port = 11211
-        client = memcache.Client(['%s:%s' % (host, port)])
-        client.flush_all()
-        client.disconnect_all()
+        self.memcached_client = memcache.Client(['%s:%s' % (host, port)])
+        self.memcached_client.flush_all()
+        self.memcached_client.disconnect_all()
 
 
 class SmokeTest(AsyncTestCase):
@@ -158,7 +158,7 @@ class TextProtocolHandlerTest(ServerTestCase):
         return b''.join(line + b'\r\n' for line in lines)
 
     @istest
-    def reads_back_a_written_value(self):
+    def stores_a_value(self):
         host = '127.0.0.1'
         port = 22322
 
@@ -196,6 +196,47 @@ class TextProtocolHandlerTest(ServerTestCase):
         self.wait()
 
     @istest
+    def reads_a_value(self):
+        host = '127.0.0.1'
+        port = 22322
+
+        self.memcached_client.set('foo', 'bar')
+
+        request_bytes = self.command_for_lines([
+            b'get foo',
+        ])
+        response_bytes = self.command_for_lines([
+            b'VALUE foo 0 3',
+            b'bar',
+            b'END',
+        ])
+
+        server = Server(io_loop=self.io_loop)
+        server.set_handler('text')
+        server.listen(port, address=host)
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        stream = iostream.IOStream(s, io_loop=self.io_loop)
+
+        def start_test():
+            stream.connect((host, port), send_request)
+
+        def send_request():
+            stream.write(request_bytes, write_finished)
+
+        def write_finished(*args, **kwargs):
+            stream.read_bytes(len(response_bytes), receive_response)
+
+        def receive_response(data):
+            self.assertEqual(data, response_bytes)
+            stream.close()
+            self.stop()
+
+        self.io_loop.add_callback(start_test)
+
+        self.wait()
+
+    @istest
     def stores_a_value_successfully(self):
         host = '127.0.0.1'
         port = 12345
@@ -204,6 +245,17 @@ class TextProtocolHandlerTest(ServerTestCase):
             server = '{}:{}'.format(host, port)
             client = memcache.Client([server])
             self.assertTrue(client.set('foo', 'bar'))
+
+    @istest
+    def gets_a_value_successfully(self):
+        host = '127.0.0.1'
+        port = 12345
+
+        with server_running(host, port, args=['-t']):
+            server = '{}:{}'.format(host, port)
+            client = memcache.Client([server])
+            client.set('foo', 'bar')
+            self.assertEqual(client.get('foo'), 'bar')
 
 
 class BinaryProtocolHandlerTest(ServerTestCase):

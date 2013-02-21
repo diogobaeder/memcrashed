@@ -9,7 +9,7 @@ from tornado import gen, iostream
 from tornado.ioloop import IOLoop
 from tornado.netutil import TCPServer
 
-from memcrashed.parser import BinaryParser
+from memcrashed.parser import BinaryParser, TextParser
 
 
 class Server(TCPServer):
@@ -105,24 +105,35 @@ class BinaryProtocolHandler(object):
 
 
 class TextProtocolHandler(object):
-    END = b'\r\n'
+    EOL = b'\r\n'
+    END = b'END' + EOL
 
     def __init__(self, io_loop):
         self.io_loop = io_loop
+        self.parser = TextParser()
 
     @gen.engine
     def process(self, client_stream, backend_stream, callback):
-        header_bytes = yield gen.Task(client_stream.read_until, self.END)
+        header_bytes = yield gen.Task(client_stream.read_until, self.EOL)
+        header = self.parser.unpack_request_header(header_bytes)
 
-        body_bytes = yield gen.Task(client_stream.read_until, self.END)
-
-        all_bytes = header_bytes + body_bytes
+        if self.parser.is_storage_command(header.command):
+            body_bytes = yield gen.Task(client_stream.read_until, self.EOL)
+            all_bytes = header_bytes + body_bytes
+        else:
+            all_bytes = header_bytes
 
         yield gen.Task(backend_stream.write, all_bytes)
 
-        header_bytes = yield gen.Task(backend_stream.read_until, self.END)
+        header_bytes = yield gen.Task(backend_stream.read_until, self.EOL)
 
-        yield gen.Task(client_stream.write, header_bytes)
+        if self.parser.is_retrieval_command(header.command):
+            body_bytes = yield gen.Task(backend_stream.read_until, self.EOL)
+            all_bytes = header_bytes + body_bytes + self.END
+        else:
+            all_bytes = header_bytes
+
+        yield gen.Task(client_stream.write, all_bytes)
         callback()
 
 
