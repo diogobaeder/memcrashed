@@ -214,6 +214,24 @@ class TextProtocolHandlerTest(ServerTestCase):
         self.assert_response_matches_request(request_bytes, response_bytes)
 
     @istest
+    def reads_multiple_values(self):
+        self.memcached_client.set('foo', 'bar')
+        self.memcached_client.set('foo2', 'bar2')
+
+        request_bytes = self.command_for_lines([
+            b'get foo foo2',
+        ])
+        response_bytes = self.command_for_lines([
+            b'VALUE foo 0 3',
+            b'bar',
+            b'VALUE foo2 0 4',
+            b'bar2',
+            b'END',
+        ])
+
+        self.assert_response_matches_request(request_bytes, response_bytes)
+
+    @istest
     def stores_a_value_successfully(self):
         host = '127.0.0.1'
         port = 12345
@@ -233,6 +251,21 @@ class TextProtocolHandlerTest(ServerTestCase):
             client = memcache.Client([server])
             client.set('foo', 'bar')
             self.assertEqual(client.get('foo'), 'bar')
+
+    @istest
+    def gets_multiple_values_successfully(self):
+        host = '127.0.0.1'
+        port = 12345
+
+        with server_running(host, port, args=['-t']):
+            server = '{}:{}'.format(host, port)
+            client = memcache.Client([server])
+            client.set('foo', 'bar')
+            client.set('foo2', 'bar2')
+            self.assertEqual(client.get_multi(['foo', 'foo2']), {
+                'foo': 'bar',
+                'foo2': 'bar2',
+            })
 
 
 class BinaryProtocolHandlerTest(ServerTestCase):

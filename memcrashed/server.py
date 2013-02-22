@@ -125,12 +125,18 @@ class TextProtocolHandler(object):
 
         yield gen.Task(backend_stream.write, all_bytes)
 
-        header_bytes = yield gen.Task(backend_stream.read_until, self.EOL)
-
         if self.parser.is_retrieval_command(header.command):
-            body_bytes = yield gen.Task(backend_stream.read_until, self.EOL)
-            all_bytes = header_bytes + body_bytes + self.END
+            all_bytes = b''
+            while True:
+                header_bytes = yield gen.Task(backend_stream.read_until, self.EOL)
+                all_bytes += header_bytes
+                if header_bytes != self.END:
+                    body_bytes = yield gen.Task(backend_stream.read_until, self.EOL)
+                    all_bytes += body_bytes
+                else:
+                    break
         else:
+            header_bytes = yield gen.Task(backend_stream.read_until, self.EOL)
             all_bytes = header_bytes
 
         yield gen.Task(client_stream.write, all_bytes)
