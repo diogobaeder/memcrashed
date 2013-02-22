@@ -157,18 +157,9 @@ class TextProtocolHandlerTest(ServerTestCase):
     def command_for_lines(self, lines):
         return b''.join(line + b'\r\n' for line in lines)
 
-    @istest
-    def stores_a_value(self):
+    def assert_response_matches_request(self, request_bytes, response_bytes):
         host = '127.0.0.1'
         port = 22322
-
-        request_bytes = self.command_for_lines([
-            b'set foo 0 0 3',
-            b'bar',
-        ])
-        response_bytes = self.command_for_lines([
-            b'STORED',
-        ])
 
         server = Server(io_loop=self.io_loop)
         server.set_handler('text')
@@ -196,10 +187,19 @@ class TextProtocolHandlerTest(ServerTestCase):
         self.wait()
 
     @istest
-    def reads_a_value(self):
-        host = '127.0.0.1'
-        port = 22322
+    def stores_a_value(self):
+        request_bytes = self.command_for_lines([
+            b'set foo 0 0 3',
+            b'bar',
+        ])
+        response_bytes = self.command_for_lines([
+            b'STORED',
+        ])
 
+        self.assert_response_matches_request(request_bytes, response_bytes)
+
+    @istest
+    def reads_a_value(self):
         self.memcached_client.set('foo', 'bar')
 
         request_bytes = self.command_for_lines([
@@ -211,30 +211,7 @@ class TextProtocolHandlerTest(ServerTestCase):
             b'END',
         ])
 
-        server = Server(io_loop=self.io_loop)
-        server.set_handler('text')
-        server.listen(port, address=host)
-
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        stream = iostream.IOStream(s, io_loop=self.io_loop)
-
-        def start_test():
-            stream.connect((host, port), send_request)
-
-        def send_request():
-            stream.write(request_bytes, write_finished)
-
-        def write_finished(*args, **kwargs):
-            stream.read_bytes(len(response_bytes), receive_response)
-
-        def receive_response(data):
-            self.assertEqual(data, response_bytes)
-            stream.close()
-            self.stop()
-
-        self.io_loop.add_callback(start_test)
-
-        self.wait()
+        self.assert_response_matches_request(request_bytes, response_bytes)
 
     @istest
     def stores_a_value_successfully(self):
