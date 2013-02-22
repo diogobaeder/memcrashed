@@ -114,33 +114,35 @@ class TextProtocolHandler(object):
 
     @gen.engine
     def process(self, client_stream, backend_stream, callback):
-        header_bytes = yield gen.Task(client_stream.read_until, self.EOL)
-        header = self.parser.unpack_request_header(header_bytes)
+        with BytesIO() as stream_data:
+            header_bytes = yield gen.Task(self._read_chunk_until_eol, client_stream, stream_data)
+            header = self.parser.unpack_request_header(header_bytes)
 
-        if self.parser.is_storage_command(header.command):
-            body_bytes = yield gen.Task(client_stream.read_until, self.EOL)
-            all_bytes = header_bytes + body_bytes
-        else:
-            all_bytes = header_bytes
+            if self.parser.is_storage_command(header.command):
+                yield gen.Task(self._read_chunk_until_eol, client_stream, stream_data)
 
-        yield gen.Task(backend_stream.write, all_bytes)
+            yield gen.Task(backend_stream.write, stream_data.getvalue())
 
-        if self.parser.is_retrieval_command(header.command):
-            all_bytes = b''
-            while True:
-                header_bytes = yield gen.Task(backend_stream.read_until, self.EOL)
-                all_bytes += header_bytes
-                if header_bytes != self.END:
-                    body_bytes = yield gen.Task(backend_stream.read_until, self.EOL)
-                    all_bytes += body_bytes
-                else:
-                    break
-        else:
-            header_bytes = yield gen.Task(backend_stream.read_until, self.EOL)
-            all_bytes = header_bytes
+        with BytesIO() as stream_data:
+            if self.parser.is_retrieval_command(header.command):
+                while True:
+                    header_bytes = yield gen.Task(self._read_chunk_until_eol, backend_stream, stream_data)
+                    if header_bytes != self.END:
+                        yield gen.Task(self._read_chunk_until_eol, backend_stream, stream_data)
+                    else:
+                        break
+            else:
+                yield gen.Task(self._read_chunk_until_eol, backend_stream, stream_data)
 
-        yield gen.Task(client_stream.write, all_bytes)
+            yield gen.Task(client_stream.write, stream_data.getvalue())
+
         callback()
+
+    @gen.engine
+    def _read_chunk_until_eol(self, stream, stream_data, callback):
+        bytes_ = yield gen.Task(stream.read_until, self.EOL)
+        stream_data.write(bytes_)
+        callback(bytes_)
 
 
 def create_options_from_arguments(args):
