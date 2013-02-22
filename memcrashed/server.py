@@ -115,26 +115,43 @@ class TextProtocolHandler(object):
     @gen.engine
     def process(self, client_stream, backend_stream, callback):
         with BytesIO() as stream_data:
-            header_bytes = yield gen.Task(self._read_chunk_until_eol, client_stream, stream_data)
-            header = self.parser.unpack_request_header(header_bytes)
-
-            if self.parser.is_storage_command(header.command):
-                yield gen.Task(self._read_chunk_until_eol, client_stream, stream_data)
-
-            yield gen.Task(backend_stream.write, stream_data.getvalue())
+            header = yield gen.Task(self._process_request, stream_data, client_stream, backend_stream)
 
         with BytesIO() as stream_data:
-            if self.parser.is_retrieval_command(header.command):
-                while True:
-                    header_bytes = yield gen.Task(self._read_chunk_until_eol, backend_stream, stream_data)
-                    if header_bytes != self.END:
-                        yield gen.Task(self._read_chunk_until_eol, backend_stream, stream_data)
-                    else:
-                        break
-            else:
-                yield gen.Task(self._read_chunk_until_eol, backend_stream, stream_data)
+            yield gen.Task(self._process_response, header, stream_data, backend_stream, client_stream)
 
-            yield gen.Task(client_stream.write, stream_data.getvalue())
+        callback()
+
+    @gen.engine
+    def _process_request(self, stream_data, client_stream, backend_stream, callback):
+        header_bytes = yield gen.Task(self._read_chunk_until_eol, client_stream, stream_data)
+        header = self.parser.unpack_request_header(header_bytes)
+
+        if self.parser.is_storage_command(header.command):
+            yield gen.Task(self._read_chunk_until_eol, client_stream, stream_data)
+
+        yield gen.Task(backend_stream.write, stream_data.getvalue())
+        callback(header)
+
+    @gen.engine
+    def _process_response(self, header, stream_data, backend_stream, client_stream, callback):
+        if self.parser.is_retrieval_command(header.command):
+            yield gen.Task(self._read_retrieval_values, backend_stream, stream_data)
+        else:
+            yield gen.Task(self._read_chunk_until_eol, backend_stream, stream_data)
+
+        yield gen.Task(client_stream.write, stream_data.getvalue())
+
+        callback()
+
+    @gen.engine
+    def _read_retrieval_values(self, backend_stream, stream_data, callback):
+        while True:
+            header_bytes = yield gen.Task(self._read_chunk_until_eol, backend_stream, stream_data)
+            if header_bytes != self.END:
+                yield gen.Task(self._read_chunk_until_eol, backend_stream, stream_data)
+            else:
+                break
 
         callback()
 
