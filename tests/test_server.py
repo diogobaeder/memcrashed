@@ -199,6 +199,20 @@ class TextProtocolHandlerTest(ServerTestCase):
         self.assert_response_matches_request(request_bytes, response_bytes)
 
     @istest
+    def stores_a_value_with_eol(self):
+        value = b'bar\r\nbaz'
+        request_bytes = self.command_for_lines([
+            b'set foo 0 0 3',
+            value,
+        ])
+        response_bytes = self.command_for_lines([
+            b'STORED',
+        ])
+
+        self.assert_response_matches_request(request_bytes, response_bytes)
+        self.assertTrue(self.memcached_client.get('foo'), value)
+
+    @istest
     def reads_a_value(self):
         self.memcached_client.set('foo', 'bar')
 
