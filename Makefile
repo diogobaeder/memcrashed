@@ -11,7 +11,7 @@ test-py2:
 	@env PYTHONHASHSEED=random PYTHONPATH=. nosetests --with-coverage --cover-package=memcrashed --cover-erase --with-yanc --with-xtraceback --with-html --html-file=nosetests.html --with-xunit tests/
 
 test-py3:
-	@env PYTHONHASHSEED=random PYTHONPATH=. nosetests --with-coverage --cover-package=memcrashed --cover-erase --with-yanc --with-xtraceback --with-xunit tests/
+	@env PYTHONHASHSEED=random PYTHONPATH=. nosetests --with-coverage --cover-package=memcrashed --cover-erase --with-yanc --with-xtraceback tests/
 
 build: test
 	@echo Running syntax check...

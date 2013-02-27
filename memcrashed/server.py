@@ -128,7 +128,9 @@ class TextProtocolHandler(object):
         header = self.parser.unpack_request_header(header_bytes)
 
         if self.parser.is_storage_command(header.command):
-            yield gen.Task(self._read_chunk_until_eol, client_stream, stream_data)
+            tokens = header_bytes[:-2].split(b' ')
+            bytes_to_read = int(tokens[4]) + len(self.EOL)
+            yield gen.Task(self._read_chunk_bytes, client_stream, stream_data, bytes_to_read)
 
         yield gen.Task(backend_stream.write, stream_data.getvalue())
         callback(header)
@@ -149,7 +151,9 @@ class TextProtocolHandler(object):
         while True:
             header_bytes = yield gen.Task(self._read_chunk_until_eol, backend_stream, stream_data)
             if header_bytes != self.END:
-                yield gen.Task(self._read_chunk_until_eol, backend_stream, stream_data)
+                tokens = header_bytes[:-2].split(b' ')
+                bytes_to_read = int(tokens[3]) + len(self.EOL)
+                yield gen.Task(self._read_chunk_bytes, backend_stream, stream_data, bytes_to_read)
             else:
                 break
 
@@ -158,6 +162,12 @@ class TextProtocolHandler(object):
     @gen.engine
     def _read_chunk_until_eol(self, stream, stream_data, callback):
         bytes_ = yield gen.Task(stream.read_until, self.EOL)
+        stream_data.write(bytes_)
+        callback(bytes_)
+
+    @gen.engine
+    def _read_chunk_bytes(self, stream, stream_data, bytes_to_read, callback):
+        bytes_ = yield gen.Task(stream.read_bytes, bytes_to_read)
         stream_data.write(bytes_)
         callback(bytes_)
 
