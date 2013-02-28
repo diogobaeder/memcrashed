@@ -128,8 +128,7 @@ class TextProtocolHandler(object):
         header = self.parser.unpack_request_header(header_bytes)
 
         if self.parser.is_storage_command(header.command):
-            tokens = header_bytes[:-2].split(b' ')
-            bytes_to_read = int(tokens[4]) + len(self.EOL)
+            bytes_to_read = self._extract_bytes_quantity(header_bytes, bytes_index=4)
             yield gen.Task(self._read_chunk_bytes, client_stream, stream_data, bytes_to_read)
 
         yield gen.Task(backend_stream.write, stream_data.getvalue())
@@ -151,8 +150,7 @@ class TextProtocolHandler(object):
         while True:
             header_bytes = yield gen.Task(self._read_chunk_until_eol, backend_stream, stream_data)
             if header_bytes != self.END:
-                tokens = header_bytes[:-2].split(b' ')
-                bytes_to_read = int(tokens[3]) + len(self.EOL)
+                bytes_to_read = self._extract_bytes_quantity(header_bytes, bytes_index=3)
                 yield gen.Task(self._read_chunk_bytes, backend_stream, stream_data, bytes_to_read)
             else:
                 break
@@ -170,6 +168,11 @@ class TextProtocolHandler(object):
         bytes_ = yield gen.Task(stream.read_bytes, bytes_to_read)
         stream_data.write(bytes_)
         callback(bytes_)
+
+    def _extract_bytes_quantity(self, header_bytes, bytes_index):
+        tokens = header_bytes[:-2].split(b' ')
+        bytes_to_read = int(tokens[bytes_index]) + len(self.EOL)
+        return bytes_to_read
 
 
 def create_options_from_arguments(args):
