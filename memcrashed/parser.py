@@ -76,7 +76,7 @@ class TextParser(object):
         return fields
 
     def is_storage_command(self, command):
-        return command in (b'set', b'cas')
+        return command in (b'set', b'cas', b'add', b'replace', b'append', b'prepend')
 
     def is_retrieval_command(self, command):
         return command in (b'get', b'gets')

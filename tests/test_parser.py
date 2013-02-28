@@ -117,6 +117,62 @@ class TextParserTest(TestCase):
         self.assertTrue(parser.is_storage_command(header.command))
 
     @istest
+    def unpacks_add_header_with_reply(self):
+        parser = TextParser()
+        request_bytes = b'add foo 0 1 2\r\n'
+
+        header = parser.unpack_request_header(request_bytes)
+
+        self.assertEqual(header.raw, request_bytes)
+        self.assertEqual(header.command, b'add')
+        self.assertEqual(header.key, b'foo')
+        self.assertEqual(header.bytes, 2)
+        self.assertFalse(header.noreply)
+        self.assertTrue(parser.is_storage_command(header.command))
+
+    @istest
+    def unpacks_replace_header_with_reply(self):
+        parser = TextParser()
+        request_bytes = b'replace foo 0 1 2\r\n'
+
+        header = parser.unpack_request_header(request_bytes)
+
+        self.assertEqual(header.raw, request_bytes)
+        self.assertEqual(header.command, b'replace')
+        self.assertEqual(header.key, b'foo')
+        self.assertEqual(header.bytes, 2)
+        self.assertFalse(header.noreply)
+        self.assertTrue(parser.is_storage_command(header.command))
+
+    @istest
+    def unpacks_append_header_with_reply(self):
+        parser = TextParser()
+        request_bytes = b'append foo 0 1 2\r\n'
+
+        header = parser.unpack_request_header(request_bytes)
+
+        self.assertEqual(header.raw, request_bytes)
+        self.assertEqual(header.command, b'append')
+        self.assertEqual(header.key, b'foo')
+        self.assertEqual(header.bytes, 2)
+        self.assertFalse(header.noreply)
+        self.assertTrue(parser.is_storage_command(header.command))
+
+    @istest
+    def unpacks_prepend_header_with_reply(self):
+        parser = TextParser()
+        request_bytes = b'prepend foo 0 1 2\r\n'
+
+        header = parser.unpack_request_header(request_bytes)
+
+        self.assertEqual(header.raw, request_bytes)
+        self.assertEqual(header.command, b'prepend')
+        self.assertEqual(header.key, b'foo')
+        self.assertEqual(header.bytes, 2)
+        self.assertFalse(header.noreply)
+        self.assertTrue(parser.is_storage_command(header.command))
+
+    @istest
     def unpacks_get_header(self):
         parser = TextParser()
         request_bytes = b'get foo\r\n'
