@@ -59,12 +59,12 @@ def proxy_memcached(client):
 
     def recv(*args, **kwargs):
         result = orig_recv(*args, **kwargs)
-        recv_results.append(result)
+        recv_results.append(result.strip())
         return result
 
     def readline():
         result = orig_readline()
-        recv_results.append(result)
+        recv_results.append(result.strip())
         return result
 
     def send_cmd(cmd):
@@ -228,12 +228,13 @@ class TextProtocolHandlerTest(ServerTestCase):
     @istest
     def stores_a_value_with_eol(self):
         value = b'bar\r\nbaz'
+
         with proxy_memcached(self.memcached_client) as (recv_results, sent_messages):
             self.memcached_client.set('foo', value)
         self.memcached_client.flush_all()
 
-        request_bytes = self.command_for_lines(item.strip() for item in sent_messages)
-        response_bytes = self.command_for_lines(item.strip() for item in recv_results)
+        request_bytes = self.command_for_lines(sent_messages)
+        response_bytes = self.command_for_lines(recv_results)
 
         self.assert_response_matches_request(request_bytes, response_bytes)
         self.assertTrue(self.memcached_client.get('foo'), value)
@@ -257,14 +258,15 @@ class TextProtocolHandlerTest(ServerTestCase):
     def reads_a_value_with_eol(self):
         value = b'bar\r\nbaz'
         self.memcached_client.set('foo', value)
+
         with proxy_memcached(self.memcached_client) as (recv_results, sent_messages):
             self.memcached_client.get('foo')
         self.memcached_client.flush_all()
 
         self.memcached_client.set('foo', value)
 
-        request_bytes = self.command_for_lines(item.strip() for item in sent_messages)
-        response_bytes = self.command_for_lines(item.strip() for item in recv_results)
+        request_bytes = self.command_for_lines(sent_messages)
+        response_bytes = self.command_for_lines(recv_results)
 
         self.assert_response_matches_request(request_bytes, response_bytes)
 
