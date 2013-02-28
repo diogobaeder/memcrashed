@@ -324,6 +324,30 @@ class TextProtocolHandlerTest(ServerTestCase):
                 'foo2': 'bar2',
             })
 
+    @istest
+    def deletes_a_value(self):
+        self.memcached_client.set('foo', 'bar')
+
+        request_bytes = self.command_for_lines([
+            b'delete foo',
+        ])
+        response_bytes = self.command_for_lines([
+            b'DELETED',
+        ])
+
+        self.assert_response_matches_request(request_bytes, response_bytes)
+
+    @istest
+    def fails_to_delete_a_value(self):
+        request_bytes = self.command_for_lines([
+            b'delete baz',
+        ])
+        response_bytes = self.command_for_lines([
+            b'NOT_FOUND',
+        ])
+
+        self.assert_response_matches_request(request_bytes, response_bytes)
+
 
 class BinaryProtocolHandlerTest(ServerTestCase):
     @istest
