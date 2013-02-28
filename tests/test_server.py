@@ -348,6 +348,30 @@ class TextProtocolHandlerTest(ServerTestCase):
 
         self.assert_response_matches_request(request_bytes, response_bytes)
 
+    @istest
+    def increases_a_value(self):
+        self.memcached_client.set('foo', 2)
+
+        request_bytes = self.command_for_lines([
+            b'incr foo 3',
+        ])
+        response_bytes = self.command_for_lines([
+            b'5',
+        ])
+
+        self.assert_response_matches_request(request_bytes, response_bytes)
+
+    @istest
+    def fails_to_increase_a_value(self):
+        request_bytes = self.command_for_lines([
+            b'incr baz 3',
+        ])
+        response_bytes = self.command_for_lines([
+            b'NOT_FOUND',
+        ])
+
+        self.assert_response_matches_request(request_bytes, response_bytes)
+
 
 class BinaryProtocolHandlerTest(ServerTestCase):
     @istest
