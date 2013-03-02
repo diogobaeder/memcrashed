@@ -1,12 +1,15 @@
 Pygments==1.6
 argparse==1.2.1
 coverage==3.6
-flake8==1.7.0
+flake8==2.0
 ipdb==0.7
 ipython==0.13.1
+mccabe==0.2
 mock==1.0.1
 nose==1.2.1
 nose-notify==0.4.2
+pep8==1.4.4
+pyflakes==0.6.1
 tdaemon==0.1.1
 termcolor==1.0.1
 tornado==2.4.1
