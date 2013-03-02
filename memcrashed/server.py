@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import argparse
-from io import BytesIO
 import socket
 import sys
 
@@ -9,7 +8,8 @@ from tornado import gen, iostream
 from tornado.ioloop import IOLoop
 from tornado.netutil import TCPServer
 
-from memcrashed.parser import BinaryParser, TextParser
+from memcrashed.handlers.binary import BinaryProtocolHandler
+from memcrashed.handlers.text import TextProtocolHandler
 
 
 class Server(TCPServer):
@@ -42,137 +42,6 @@ class Server(TCPServer):
     def ensure_backend(self):
         if self.backend is None:
             self.backend = self.create_backend()
-
-
-class BinaryProtocolHandler(object):
-    HEADER_BYTES = 24
-    QUIET_OPS = (
-        0x09,  # GetQ
-        0x0d,  # GetKQ
-        0x11,  # SetQ
-        0x12,  # AddQ
-        0x13,  # ReplaceQ
-        0x14,  # DeleteQ
-        0x15,  # IncrementQ
-        0x16,  # DecrementQ
-        0x17,  # QuitQ
-        0x18,  # FlushQ
-        0x19,  # AppendQ
-        0x1a,  # PrependQ
-        0x1e,  # GATQ
-        0x32,  # RSetQ
-        0x34,  # RAppendQ
-        0x36,  # RPrependQ
-        0x38,  # RDeleteQ
-        0x3a,  # RIncrQ
-        0x3c,  # RDecrQ
-    )
-    NO_OP = 0x0a
-
-    def __init__(self, io_loop):
-        self.io_loop = io_loop
-        self.parser = BinaryParser()
-
-    @gen.engine
-    def process(self, client_stream, backend_stream, callback):
-        with BytesIO() as stream_data:
-            yield gen.Task(self._read_full_chunk, self.parser.unpack_request_header, stream_data, client_stream)
-            yield gen.Task(backend_stream.write, stream_data.getvalue())
-
-        with BytesIO() as stream_data:
-            yield gen.Task(self._read_full_chunk, self.parser.unpack_response_header, stream_data, backend_stream)
-            yield gen.Task(client_stream.write, stream_data.getvalue())
-
-        callback()
-
-    @gen.engine
-    def _read_full_chunk(self, unpack, stream_data, stream, callback):
-        while True:
-            headers = yield gen.Task(self._read_chunk, stream, stream_data, unpack)
-            if headers.opcode not in self.QUIET_OPS:
-                break
-        callback()
-
-    @gen.engine
-    def _read_chunk(self, stream, stream_data, unpack, callback):
-        header_bytes = yield gen.Task(stream.read_bytes, self.HEADER_BYTES)
-        stream_data.write(header_bytes)
-        headers = unpack(header_bytes)
-        if headers.total_body_length > 0:
-            body_bytes = yield gen.Task(stream.read_bytes, headers.total_body_length)
-            stream_data.write(body_bytes)
-        callback(headers)
-
-
-class TextProtocolHandler(object):
-    EOL = b'\r\n'
-    END = b'END' + EOL
-
-    def __init__(self, io_loop):
-        self.io_loop = io_loop
-        self.parser = TextParser()
-
-    @gen.engine
-    def process(self, client_stream, backend_stream, callback):
-        with BytesIO() as stream_data:
-            header = yield gen.Task(self._process_request, stream_data, client_stream, backend_stream)
-
-        with BytesIO() as stream_data:
-            yield gen.Task(self._process_response, header, stream_data, backend_stream, client_stream)
-
-        callback()
-
-    @gen.engine
-    def _process_request(self, stream_data, client_stream, backend_stream, callback):
-        header_bytes = yield gen.Task(self._read_chunk_until_eol, client_stream, stream_data)
-        header = self.parser.unpack_request_header(header_bytes)
-
-        if self.parser.is_storage_command(header.command):
-            bytes_to_read = self._extract_bytes_quantity(header_bytes, bytes_index=4)
-            yield gen.Task(self._read_chunk_bytes, client_stream, stream_data, bytes_to_read)
-
-        yield gen.Task(backend_stream.write, stream_data.getvalue())
-        callback(header)
-
-    @gen.engine
-    def _process_response(self, header, stream_data, backend_stream, client_stream, callback):
-        if self.parser.is_retrieval_command(header.command):
-            yield gen.Task(self._read_retrieval_values, backend_stream, stream_data)
-        else:
-            yield gen.Task(self._read_chunk_until_eol, backend_stream, stream_data)
-
-        yield gen.Task(client_stream.write, stream_data.getvalue())
-
-        callback()
-
-    @gen.engine
-    def _read_retrieval_values(self, backend_stream, stream_data, callback):
-        while True:
-            header_bytes = yield gen.Task(self._read_chunk_until_eol, backend_stream, stream_data)
-            if header_bytes != self.END:
-                bytes_to_read = self._extract_bytes_quantity(header_bytes, bytes_index=3)
-                yield gen.Task(self._read_chunk_bytes, backend_stream, stream_data, bytes_to_read)
-            else:
-                break
-
-        callback()
-
-    @gen.engine
-    def _read_chunk_until_eol(self, stream, stream_data, callback):
-        bytes_ = yield gen.Task(stream.read_until, self.EOL)
-        stream_data.write(bytes_)
-        callback(bytes_)
-
-    @gen.engine
-    def _read_chunk_bytes(self, stream, stream_data, bytes_to_read, callback):
-        bytes_ = yield gen.Task(stream.read_bytes, bytes_to_read)
-        stream_data.write(bytes_)
-        callback(bytes_)
-
-    def _extract_bytes_quantity(self, header_bytes, bytes_index):
-        tokens = header_bytes[:-2].split(b' ')
-        bytes_to_read = int(tokens[bytes_index]) + len(self.EOL)
-        return bytes_to_read
 
 
 def create_options_from_arguments(args):
