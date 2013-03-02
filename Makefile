@@ -19,7 +19,7 @@ test-py3:
 
 lint:
 	@echo Running syntax check...
-	-@flake8 . --ignore=E501
+	@flake8 . --ignore=E501
 
 install:
 	pip install -r $(MAIN_REQUIREMENTS) --use-mirrors
