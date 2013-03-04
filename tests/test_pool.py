@@ -1,14 +1,14 @@
 from nose.tools import istest
 
-from memcrashed.pool import Pool, PoolRepository
+from memcrashed.proxy import Proxy, ProxyRepository
 from .utils import ServerTestCase
 
 
 class PoolRepositoryTest(ServerTestCase):
     @istest
     def gets_pool_for_key(self):
-        repository = PoolRepository()
+        repository = ProxyRepository()
 
-        pool = repository.pool_for_key('foo')
+        pool = repository.proxy_for_key('foo')
 
-        self.assertIsInstance(pool, Pool)
+        self.assertIsInstance(pool, Proxy)

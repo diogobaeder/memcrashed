@@ -5,7 +5,7 @@ from io import BytesIO
 from tornado import gen
 
 from memcrashed.parser import TextParser
-from memcrashed.pool import PoolRepository
+from memcrashed.proxy import ProxyRepository
 
 
 class TextProtocolHandler(object):
@@ -15,7 +15,7 @@ class TextProtocolHandler(object):
     def __init__(self, io_loop):
         self.io_loop = io_loop
         self.parser = TextParser()
-        self.pool_repository = PoolRepository()
+        self.pool_repository = ProxyRepository()
 
     @gen.engine
     def process(self, client_stream, backend_stream, callback):
