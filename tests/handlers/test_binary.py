@@ -6,6 +6,7 @@ from nose.tools import istest
 from tornado import iostream
 
 from memcrashed.handlers.binary import BinaryProtocolHandler
+from memcrashed.pool import PoolRepository
 from ..utils import pylibmc, PYLIBMC_EXISTS, PYLIBMC_SKIP_REASON, server_running, ServerTestCase
 
 
@@ -151,6 +152,12 @@ class BinaryProtocolHandlerTest(ServerTestCase):
 
         protocol.process(client_stream, backend_stream, finish_test)
         self.wait(timeout=1)
+
+    @istest
+    def starts_with_pool_repository(self):
+        handler = BinaryProtocolHandler(self.io_loop)
+
+        self.assertIsInstance(handler.pool_repository, PoolRepository)
 
 
 class MockStream(object):

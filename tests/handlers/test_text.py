@@ -4,7 +4,8 @@ import memcache
 from nose.tools import istest
 from tornado import iostream
 
-from memcrashed.server import Server
+from memcrashed.pool import PoolRepository
+from memcrashed.server import Server, TextProtocolHandler
 from ..utils import proxy_memcached, server_running, ServerTestCase
 
 
@@ -199,3 +200,9 @@ class TextProtocolHandlerTest(ServerTestCase):
         ])
 
         self.assert_response_matches_request(request_bytes, response_bytes)
+
+    @istest
+    def starts_with_pool_repository(self):
+        handler = TextProtocolHandler(self.io_loop)
+
+        self.assertIsInstance(handler.pool_repository, PoolRepository)

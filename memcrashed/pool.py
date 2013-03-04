@@ -1,0 +1,2 @@
+class PoolRepository(object):
+    pass
