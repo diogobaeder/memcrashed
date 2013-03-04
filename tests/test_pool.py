@@ -9,6 +9,7 @@ class PoolRepositoryTest(ServerTestCase):
     def gets_pool_for_key(self):
         repository = ProxyRepository()
 
-        pool = repository.proxy_for_key('foo')
+        proxy = repository.proxy_for_key('foo')
 
-        self.assertIsInstance(pool, Proxy)
+        self.assertIsInstance(proxy, Proxy)
+        self.assertEqual(proxy.key, 'foo')
