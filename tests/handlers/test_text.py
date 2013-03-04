@@ -6,13 +6,10 @@ from tornado import iostream
 
 from memcrashed.proxy import ProxyRepository
 from memcrashed.server import Server, TextProtocolHandler
-from ..utils import proxy_memcached, server_running, ServerTestCase
+from ..utils import command_for_lines, proxy_memcached, server_running, ServerTestCase
 
 
 class TextProtocolHandlerTest(ServerTestCase):
-    def command_for_lines(self, lines):
-        return b''.join(line + b'\r\n' for line in lines)
-
     def assert_response_matches_request(self, request_bytes, response_bytes):
         host = '127.0.0.1'
         port = 22322
@@ -44,11 +41,11 @@ class TextProtocolHandlerTest(ServerTestCase):
 
     @istest
     def stores_a_value(self):
-        request_bytes = self.command_for_lines([
+        request_bytes = command_for_lines([
             b'set foo 0 0 3',
             b'bar',
         ])
-        response_bytes = self.command_for_lines([
+        response_bytes = command_for_lines([
             b'STORED',
         ])
 
@@ -62,8 +59,8 @@ class TextProtocolHandlerTest(ServerTestCase):
             self.memcached_client.set('foo', value)
         self.memcached_client.flush_all()
 
-        request_bytes = self.command_for_lines(sent_messages)
-        response_bytes = self.command_for_lines(recv_results)
+        request_bytes = command_for_lines(sent_messages)
+        response_bytes = command_for_lines(recv_results)
 
         self.assert_response_matches_request(request_bytes, response_bytes)
         self.assertTrue(self.memcached_client.get('foo'), value)
@@ -72,10 +69,10 @@ class TextProtocolHandlerTest(ServerTestCase):
     def reads_a_value(self):
         self.memcached_client.set('foo', 'bar')
 
-        request_bytes = self.command_for_lines([
+        request_bytes = command_for_lines([
             b'get foo',
         ])
-        response_bytes = self.command_for_lines([
+        response_bytes = command_for_lines([
             b'VALUE foo 0 3',
             b'bar',
             b'END',
@@ -94,8 +91,8 @@ class TextProtocolHandlerTest(ServerTestCase):
 
         self.memcached_client.set('foo', value)
 
-        request_bytes = self.command_for_lines(sent_messages)
-        response_bytes = self.command_for_lines(recv_results)
+        request_bytes = command_for_lines(sent_messages)
+        response_bytes = command_for_lines(recv_results)
 
         self.assert_response_matches_request(request_bytes, response_bytes)
 
@@ -104,10 +101,10 @@ class TextProtocolHandlerTest(ServerTestCase):
         self.memcached_client.set('foo', 'bar')
         self.memcached_client.set('foo2', 'bar2')
 
-        request_bytes = self.command_for_lines([
+        request_bytes = command_for_lines([
             b'get foo foo2',
         ])
-        response_bytes = self.command_for_lines([
+        response_bytes = command_for_lines([
             b'VALUE foo 0 3',
             b'bar',
             b'VALUE foo2 0 4',
@@ -157,10 +154,10 @@ class TextProtocolHandlerTest(ServerTestCase):
     def deletes_a_value(self):
         self.memcached_client.set('foo', 'bar')
 
-        request_bytes = self.command_for_lines([
+        request_bytes = command_for_lines([
             b'delete foo',
         ])
-        response_bytes = self.command_for_lines([
+        response_bytes = command_for_lines([
             b'DELETED',
         ])
 
@@ -168,10 +165,10 @@ class TextProtocolHandlerTest(ServerTestCase):
 
     @istest
     def fails_to_delete_a_value(self):
-        request_bytes = self.command_for_lines([
+        request_bytes = command_for_lines([
             b'delete baz',
         ])
-        response_bytes = self.command_for_lines([
+        response_bytes = command_for_lines([
             b'NOT_FOUND',
         ])
 
@@ -181,10 +178,10 @@ class TextProtocolHandlerTest(ServerTestCase):
     def increases_a_value(self):
         self.memcached_client.set('foo', 2)
 
-        request_bytes = self.command_for_lines([
+        request_bytes = command_for_lines([
             b'incr foo 3',
         ])
-        response_bytes = self.command_for_lines([
+        response_bytes = command_for_lines([
             b'5',
         ])
 
@@ -192,10 +189,10 @@ class TextProtocolHandlerTest(ServerTestCase):
 
     @istest
     def fails_to_increase_a_value(self):
-        request_bytes = self.command_for_lines([
+        request_bytes = command_for_lines([
             b'incr baz 3',
         ])
-        response_bytes = self.command_for_lines([
+        response_bytes = command_for_lines([
             b'NOT_FOUND',
         ])
 

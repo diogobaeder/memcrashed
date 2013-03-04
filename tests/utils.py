@@ -77,3 +77,7 @@ class ServerTestCase(AsyncTestCase):
         self.memcached_client = memcache.Client(['%s:%s' % (host, port)])
         self.memcached_client.flush_all()
         self.memcached_client.disconnect_all()
+
+
+def command_for_lines(lines):
+    return b''.join(line + b'\r\n' for line in lines)
