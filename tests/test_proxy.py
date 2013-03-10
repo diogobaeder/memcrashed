@@ -4,9 +4,9 @@ from memcrashed.proxy import Proxy, ProxyRepository
 from .utils import ServerTestCase
 
 
-class PoolRepositoryTest(ServerTestCase):
+class ProxyRepositoryTest(ServerTestCase):
     @istest
-    def gets_pool_for_key(self):
+    def gets_proxy_for_key(self):
         repository = ProxyRepository()
 
         proxy = repository.proxy_for_key('foo')
