@@ -15,7 +15,7 @@ class TextProtocolHandler(object):
     def __init__(self, io_loop):
         self.io_loop = io_loop
         self.parser = TextParser()
-        self.pool_repository = ProxyRepository()
+        self.pool_repository = ProxyRepository(self.io_loop)
 
     @gen.engine
     def process(self, client_stream, backend_stream, callback):

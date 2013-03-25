@@ -36,7 +36,7 @@ class BinaryProtocolHandler(object):
     def __init__(self, io_loop):
         self.io_loop = io_loop
         self.parser = BinaryParser()
-        self.pool_repository = ProxyRepository()
+        self.pool_repository = ProxyRepository(self.io_loop)
 
     @gen.engine
     def process(self, client_stream, backend_stream, callback):

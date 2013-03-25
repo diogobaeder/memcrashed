@@ -22,5 +22,8 @@ lint:
 	@flake8 . --ignore=E501
 
 install:
-	pip install -r $(MAIN_REQUIREMENTS) --use-mirrors
-	pip install -r requirements-py$(PYTHON_MAJOR_VERSION).txt --use-mirrors
+	@echo Installing dependencies...
+	@pip install -r $(MAIN_REQUIREMENTS) --use-mirrors
+	-@[ -f $(EXTENDED_REQUIREMENTS) ] && pip install -r $(EXTENDED_REQUIREMENTS) --use-mirrors || \
+		echo File "$(EXTENDED_REQUIREMENTS)" doesn\'t exist, skipping version-specific packages
+	@echo Finished installing dependencies.
